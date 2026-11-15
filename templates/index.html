@@ -174,8 +174,8 @@ button.g:hover{background:var(--line)}
 #msgs::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 #msgs::-webkit-scrollbar-thumb:hover{background:var(--mut)}
 
-.m{max-width:70%;padding:10px 16px;border-radius:16px;background:var(--them);align-self:flex-start;word-wrap:break-word;white-space:pre-wrap;cursor:pointer;position:relative;transition:all .15s;box-shadow:0 1px 2px var(--shadow);tab-size:4;-moz-tab-size:4}
-.m:hover{box-shadow:0 2px 8px var(--shadow)}
+.m{max-width:70%;padding:10px 16px;border-radius:16px;background:var(--them);align-self:flex-start;word-wrap:break-word;white-space:pre-wrap;cursor:pointer;position:relative;transition:box-shadow .15s;box-shadow:0 1px 2px var(--shadow);tab-size:4;-moz-tab-size:4;margin:6px 0}
+.m:hover{box-shadow:0 3px 12px var(--shadow)}
 .m.me{background:var(--me);color:var(--me-text);align-self:flex-end}
 .gn{font-size:12px;font-weight:600;color:var(--acc);margin-bottom:3px}
 .m.flash{outline:3px solid #F59E0B;outline-offset:2px}
@@ -189,18 +189,25 @@ button.g:hover{background:var(--line)}
 .code-copy-btn:hover{background:var(--acc);color:#fff}
 .code-content{margin:0;padding:12px 14px;overflow-x:auto;font-family:"Fira Code","Cascadia Code",Consolas,Monaco,monospace;font-size:13px;line-height:1.55;color:var(--code-fg);tab-size:4;-moz-tab-size:4;white-space:pre}
 .rp{font-size:12px;opacity:.75;border-left:3px solid currentColor;padding-left:8px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
-.t{font-size:11px;opacity:.6;margin-top:3px}
+.t{font-size:11px;opacity:.65;margin-top:4px}
 
-/* Message actions & reactions */
-.acts{display:none;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
-.m:hover .acts,.m.act .acts{display:flex}
-.acts button{background:rgba(0,0,0,.1);color:inherit;padding:3px 10px;font-size:11px;border-radius:8px;font-weight:500;border:none;transition:background .15s}
-.m.me .acts button{background:rgba(255,255,255,.2)}
-.acts button:hover{background:rgba(0,0,0,.2)}
+/* Message actions & reactions floating toolbar */
+.acts{display:none;position:absolute;top:-18px;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--line);border-radius:24px;padding:3px 7px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:25;white-space:nowrap;backdrop-filter:blur(8px)}
+.m.me .acts{right:10px}
+.m:not(.me) .acts{left:10px}
+.m:hover .acts,.m.act .acts{display:inline-flex}
 
-.rx-bar{display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:2px 6px;box-shadow:0 2px 8px var(--shadow)}
-.rx-btn{background:none;border:none;padding:2px 4px;font-size:15px;cursor:pointer;border-radius:4px;transition:transform .15s;line-height:1}
-.rx-btn:hover{transform:scale(1.3)}
+.acts-sep{width:1px;height:14px;background:var(--line);margin:0 3px}
+
+.acts button{background:transparent;color:var(--fg);padding:3px 8px;font-size:11.5px;border-radius:12px;font-weight:500;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:3px;transition:all .15s;font-family:inherit}
+.acts button:hover{background:var(--them);color:var(--acc)}
+.acts button.del:hover{background:rgba(239,68,68,.12);color:#ef4444}
+
+.rx-bar{display:inline-flex;align-items:center;gap:1px}
+.rx-btn{background:transparent;border:none;padding:2px 4px;font-size:15px;cursor:pointer;border-radius:6px;transition:transform .15s,background .15s;line-height:1}
+.rx-btn:hover{transform:scale(1.3);background:rgba(0,0,0,.06)}
+[data-theme="dark"] .rx-btn:hover{background:rgba(255,255,255,.1)}
+
 .rx-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .rx-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;background:rgba(0,0,0,.06);font-size:12px;cursor:pointer;transition:all .15s;border:1px solid transparent;user-select:none}
 [data-theme="dark"] .rx-chip{background:rgba(255,255,255,.08)}
@@ -273,6 +280,33 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 .acc-perm.hidden-active{background:rgba(239,68,68,.15);color:#ef4444;border-color:rgba(239,68,68,.4);font-weight:700}
 .acc-btn-del{padding:5px 10px;border-radius:8px;font-size:12px;color:#EF4444;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);cursor:pointer;transition:all .15s}
 .acc-btn-del:hover{background:#EF4444;color:#fff}
+
+/* ─── Global Message Wipe Countdown Banner ─── */
+.wipe-banner{background:linear-gradient(90deg,rgba(239,68,68,.14),rgba(245,158,11,.14));border-bottom:1px solid rgba(239,68,68,.3);padding:9px 18px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;color:#ef4444;font-weight:600;z-index:10}
+.wipe-banner strong{font-family:"Fira Code",Consolas,monospace;font-size:14px;background:rgba(239,68,68,.18);padding:3px 9px;border-radius:6px;letter-spacing:1px;border:1px solid rgba(239,68,68,.35);color:#ef4444}
+.banner-cancel-btn{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.35);padding:3px 12px;border-radius:8px;font-size:11.5px;cursor:pointer;font-weight:700;transition:all .15s}
+.banner-cancel-btn:hover{background:#ef4444;color:#fff}
+
+/* ─── Accounts Section Auto-Wipe Card ─── */
+.acc-wipe-card{background:var(--them);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:20px;box-shadow:0 2px 8px var(--shadow)}
+.acc-wipe-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.acc-wipe-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:.5px}
+.acc-wipe-badge.inactive{background:rgba(100,116,139,.12);color:#64748b;border:1px solid rgba(100,116,139,.3)}
+.acc-wipe-badge.active{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.35)}
+.acc-wipe-inputs{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.acc-wipe-inputs label{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--fg)}
+.acc-wipe-presets{display:inline-flex;gap:5px;flex-wrap:wrap}
+.preset-btn{background:var(--bg);border:1px solid var(--line);color:var(--fg);font-size:11.5px;padding:4px 9px;border-radius:8px;cursor:pointer;transition:all .15s;font-family:inherit;font-weight:600}
+.preset-btn:hover{background:var(--acc);color:#fff;border-color:var(--acc)}
+.acc-wipe-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.acc-btn-start-wipe{background:var(--acc);color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.acc-btn-start-wipe:hover{filter:brightness(1.1)}
+.acc-btn-cancel-wipe{background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.3);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.acc-btn-cancel-wipe:hover{background:#ef4444;color:#fff}
+.acc-btn-instant-wipe{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25);padding:8px 14px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;margin-left:auto}
+.acc-btn-instant-wipe:hover{background:#ef4444;color:#fff}
+.acc-wipe-live-box{background:rgba(239,68,68,.08);border:1px dashed rgba(239,68,68,.35);border-radius:12px;padding:12px 16px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.countdown-digits{font-family:"Fira Code",Consolas,monospace;font-size:22px;font-weight:700;color:#ef4444;letter-spacing:1.5px}
 
 /* ─── Mobile ─── */
 @media(max-width:640px){
@@ -456,6 +490,11 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
     <div class="head"><a href="#" id="back" style="display:none;font-size:20px;text-decoration:none;color:var(--fg)">←</a>
       <div class="t1"><span id="who">Pick someone to chat with</span><small id="st"></small></div>
       <button class="g" id="mg" type="button" style="display:none">Members</button><input id="q" placeholder="Search…" style="display:none">
+    </div>
+    <div id="wipeBanner" class="wipe-banner" style="display:none">
+      <span>⏳</span>
+      <span>Global Auto-Wipe: All messages will self-destruct in <strong id="bannerTimer">00:00</strong></span>
+      {% if user.admin %}<button id="bannerCancelBtn" type="button" class="banner-cancel-btn">Cancel</button>{% endif %}
     </div>
     <div class="ov" id="ov"></div>
     <div id="msgs"><div class="empty">No chat open</div></div>
@@ -704,14 +743,6 @@ function render(m){
   t.textContent=new Date(m.ts*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+(m.edited?" · edited":"")+(m.sender===ME&&curT==="u"?(m.read?" · ✓✓ Seen":" · ✓ Sent"):"");
   d.appendChild(t);
   const a=document.createElement("div");a.className="acts";
-  const B=(l,f)=>{const b=document.createElement("button");b.type="button";b.textContent=l;b.onclick=e=>{e.stopPropagation();f()};a.appendChild(b)};
-  B("Reply",()=>{reply={id:m.id,text:(m.body||m.fname||"").slice(0,60)};rb();$("body").focus();d.classList.remove("act")});
-  if(m.sender===ME && m.body){
-    B("Edit",async()=>{const v=prompt("Edit message",m.body);if(v&&v.trim()&&v!==m.body){await fetch("/api/edit/"+m.id,{method:"POST",body:new URLSearchParams({body:v})});poll()}});
-  }
-  if(m.sender===ME || ADMIN){
-    B("Unsend",async()=>{if(confirm("Unsend this message? It disappears for everyone with no trace.")){await fetch("/api/delete/"+m.id,{method:"POST"});poll()}});
-  }
 
   const rxBar = document.createElement("div");
   rxBar.className = "rx-bar";
@@ -730,6 +761,26 @@ function render(m){
   });
   a.appendChild(rxBar);
 
+  const sep = document.createElement("span");
+  sep.className = "acts-sep";
+  a.appendChild(sep);
+
+  const B=(l,ico,cls,f)=>{
+    const b=document.createElement("button");
+    b.type="button";
+    if(cls) b.className=cls;
+    b.innerHTML=`<span>${ico}</span> <span>${l}</span>`;
+    b.onclick=e=>{e.stopPropagation();f()};
+    a.appendChild(b);
+  };
+  B("Reply","↩️","",()=>{reply={id:m.id,text:(m.body||m.fname||"").slice(0,60)};rb();$("body").focus();d.classList.remove("act")});
+  if(m.sender===ME && m.body){
+    B("Edit","✏️","",async()=>{const v=prompt("Edit message",m.body);if(v&&v.trim()&&v!==m.body){await fetch("/api/edit/"+m.id,{method:"POST",body:new URLSearchParams({body:v})});poll()}});
+  }
+  if(m.sender===ME || ADMIN){
+    B("Unsend","🗑️","del",async()=>{if(confirm("Unsend this message? It disappears for everyone with no trace.")){await fetch("/api/delete/"+m.id,{method:"POST"});poll()}});
+  }
+
   d.appendChild(a); d.onclick=()=>d.classList.toggle("act");
   return d;
 }
@@ -746,6 +797,7 @@ async function poll(){
     r=await resp.json()}catch(e){return}
   if(id!==cur||t!==curT)return;
   since=r.now;
+  if(r.wipe) updateWipeBanner(r.wipe);
   const box=$("msgs"),near=box.scrollHeight-box.scrollTop-box.clientHeight<120||last===0;
   let newOnes=false;
   r.msgs.forEach(m=>{ if(m.id>last){newOnes=true;last=m.id} upsert(m)});
@@ -880,6 +932,10 @@ $("adm").onclick=async function acc(){
   closeBtn.style.padding = "6px 14px";
   topBar.appendChild(closeBtn);
   ov.appendChild(topBar);
+
+  /* Inject wipe card */
+  const wipeStatus = await fetch("/api/wipe_status").then(r=>r.json()).catch(()=>({active:false,remaining:0}));
+  ov.appendChild(buildWipeCard(ov, wipeStatus));
 
   const formBox = document.createElement("div");
   formBox.className = "acc-create-box";
@@ -1066,6 +1122,207 @@ $("adm").onclick=async function acc(){
   foot.appendChild(btmClose);
   ov.appendChild(foot);
 };
+
+/* ─── Wipe Banner Logic ─── */
+let _wipeBannerInterval = null;
+let _wipeTargetTs = null;
+
+function fmtCountdown(secs){
+  if(secs <= 0) return "00:00";
+  const h = Math.floor(secs/3600);
+  const m = Math.floor((secs%3600)/60);
+  const s = secs%60;
+  if(h > 0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function updateWipeBanner(wipe){
+  const banner = $("wipeBanner");
+  const timerEl = $("bannerTimer");
+  if(!banner || !timerEl) return;
+  if(!wipe || !wipe.active){
+    banner.style.display = "none";
+    if(_wipeBannerInterval){ clearInterval(_wipeBannerInterval); _wipeBannerInterval = null; }
+    _wipeTargetTs = null;
+    if(wipe && wipe.wiped){
+      // messages wiped - refresh chat
+      els = {}; last = 0; since = 0;
+      $("msgs").innerHTML = '<div class="empty">All messages have been wiped.</div>';
+      loadUsers(); loadGroups();
+    }
+    return;
+  }
+  _wipeTargetTs = wipe.target_ts;
+  banner.style.display = "flex";
+  const tick = () => {
+    const rem = Math.max(0, Math.round(_wipeTargetTs - Date.now()/1000));
+    timerEl.textContent = fmtCountdown(rem);
+  };
+  tick();
+  if(!_wipeBannerInterval){
+    _wipeBannerInterval = setInterval(tick, 500);
+  }
+}
+
+/* Poll wipe status even when no chat open */
+async function pollWipe(){
+  try{
+    const r = await fetch("/api/wipe_status");
+    if(!r.ok) return;
+    const w = await r.json();
+    updateWipeBanner(w);
+  }catch(e){}
+}
+setInterval(pollWipe, 3000);
+pollWipe();
+
+{% if user.admin %}
+/* Banner cancel button */
+if($("bannerCancelBtn")){
+  $("bannerCancelBtn").onclick = async () => {
+    await fetch("/api/admin/wipe_timer", {method:"POST", body: new URLSearchParams({action:"cancel"})});
+    updateWipeBanner({active:false});
+  };
+}
+
+/* ─── Wipe Card in Accounts Panel ─── */
+function buildWipeCard(ov, currentWipe){
+  const card = document.createElement("div");
+  card.className = "acc-wipe-card";
+  card.id = "wipeCard";
+
+  const hdr = document.createElement("div");
+  hdr.className = "acc-wipe-header";
+  hdr.innerHTML = `
+    <div>
+      <div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px">
+        💣 Auto Message Wipe
+        <span class="acc-wipe-badge ${currentWipe.active ? 'active' : 'inactive'}" id="wipeBadge">
+          ${currentWipe.active ? '● Active' : '○ Inactive'}
+        </span>
+      </div>
+      <div style="font-size:12px;color:var(--mut);margin-top:3px">Set a countdown — all messages in both spaces disappear when it hits zero.</div>
+    </div>
+  `;
+  card.appendChild(hdr);
+
+  /* Preset buttons */
+  const presetsRow = document.createElement("div");
+  presetsRow.className = "acc-wipe-inputs";
+  presetsRow.innerHTML = `<label>⏱ Quick presets:</label>`;
+  const presetsWrap = document.createElement("div");
+  presetsWrap.className = "acc-wipe-presets";
+  [[30,"30s"],[60,"1m"],[300,"5m"],[600,"10m"],[1800,"30m"],[3600,"1h"]].forEach(([secs,label])=>{
+    const b = document.createElement("button");
+    b.className = "preset-btn";
+    b.type = "button";
+    b.textContent = label;
+    b.dataset.secs = secs;
+    b.onclick = () => {
+      $("wipeSecsInput").value = secs;
+    };
+    presetsWrap.appendChild(b);
+  });
+  presetsRow.appendChild(presetsWrap);
+  card.appendChild(presetsRow);
+
+  /* Custom input */
+  const customRow = document.createElement("div");
+  customRow.className = "acc-wipe-inputs";
+  customRow.innerHTML = `
+    <label for="wipeSecsInput">⏳ Custom (seconds):</label>
+    <input id="wipeSecsInput" type="number" min="5" max="86400" placeholder="e.g. 120"
+      style="width:110px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;outline:none">
+    <span style="font-size:12px;color:var(--mut)" id="wipeSetsHint"></span>
+  `;
+  card.appendChild(customRow);
+
+  /* Actions row */
+  const actRow = document.createElement("div");
+  actRow.className = "acc-wipe-actions";
+
+  const startBtn = document.createElement("button");
+  startBtn.className = "acc-btn-start-wipe";
+  startBtn.type = "button";
+  startBtn.textContent = "▶ Start Countdown";
+  startBtn.onclick = async () => {
+    const secs = parseInt($("wipeSecsInput").value);
+    if(!secs || secs < 5){ $("wipeSetsHint").textContent = "Min 5 seconds"; return; }
+    $("wipeSetsHint").textContent = "";
+    startBtn.disabled = true; startBtn.textContent = "Starting…";
+    const r = await fetch("/api/admin/wipe_timer", {method:"POST", body: new URLSearchParams({action:"start", seconds:secs})});
+    const data = await r.json();
+    if(r.ok && data.ok){
+      updateWipeBanner(data);
+      refreshWipeCard(ov, data);
+    } else {
+      $("wipeSetsHint").textContent = data.error || "Failed";
+      startBtn.disabled = false; startBtn.textContent = "▶ Start Countdown";
+    }
+  };
+  actRow.appendChild(startBtn);
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "acc-btn-cancel-wipe";
+  cancelBtn.type = "button";
+  cancelBtn.textContent = "✕ Cancel";
+  cancelBtn.style.display = currentWipe.active ? "" : "none";
+  cancelBtn.onclick = async () => {
+    await fetch("/api/admin/wipe_timer", {method:"POST", body: new URLSearchParams({action:"cancel"})});
+    updateWipeBanner({active:false});
+    refreshWipeCard(ov, {active:false});
+  };
+  actRow.appendChild(cancelBtn);
+
+  const instantBtn = document.createElement("button");
+  instantBtn.className = "acc-btn-instant-wipe";
+  instantBtn.type = "button";
+  instantBtn.textContent = "🗑️ Wipe Now";
+  instantBtn.onclick = async () => {
+    if(!confirm("⚠️ This will IMMEDIATELY delete ALL messages in BOTH spaces.\nThis cannot be undone.\n\nAre you sure?")) return;
+    instantBtn.disabled = true; instantBtn.textContent = "Wiping…";
+    const r = await fetch("/api/admin/wipe_timer", {method:"POST", body: new URLSearchParams({action:"wipe_now"})});
+    const data = await r.json();
+    if(data.ok) updateWipeBanner({active:false, wiped:true});
+    refreshWipeCard(ov, {active:false});
+  };
+  actRow.appendChild(instantBtn);
+
+  card.appendChild(actRow);
+
+  /* Live countdown in card if active */
+  if(currentWipe.active){
+    const liveBox = document.createElement("div");
+    liveBox.className = "acc-wipe-live-box";
+    liveBox.id = "wipeCardLiveBox";
+    liveBox.innerHTML = `
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Time Remaining</div>
+        <div class="countdown-digits" id="wipeCardTimer">${fmtCountdown(currentWipe.remaining||0)}</div>
+      </div>
+      <div style="font-size:12px;color:var(--mut)">Messages will be permanently deleted when<br>the countdown hits zero.</div>
+    `;
+    card.appendChild(liveBox);
+    /* Keep card timer in sync */
+    setInterval(() => {
+      const el = $("wipeCardTimer");
+      if(!el || !_wipeTargetTs) return;
+      const rem = Math.max(0, Math.round(_wipeTargetTs - Date.now()/1000));
+      el.textContent = fmtCountdown(rem);
+    }, 500);
+  }
+
+  return card;
+}
+
+async function refreshWipeCard(ov, wipeData){
+  const old = $("wipeCard");
+  if(old){
+    const fresh = buildWipeCard(ov, wipeData);
+    old.replaceWith(fresh);
+  }
+}
+{% endif %}
 if($("na")){
   $("na").onclick = async () => {
     await $("adm").onclick();

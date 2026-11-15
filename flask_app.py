@@ -62,7 +62,8 @@ def init_db():
     c.executescript("""
     CREATE TABLE IF NOT EXISTS groups(id INTEGER PRIMARY KEY, name TEXT);
     CREATE TABLE IF NOT EXISTS gmembers(gid INTEGER, uid INTEGER, last_read INTEGER DEFAULT 0, PRIMARY KEY(gid,uid));
-    CREATE TABLE IF NOT EXISTS reactions(mid INTEGER, uid INTEGER, emoji TEXT, PRIMARY KEY(mid,uid,emoji));""")
+    CREATE TABLE IF NOT EXISTS reactions(mid INTEGER, uid INTEGER, emoji TEXT, PRIMARY KEY(mid,uid,emoji));
+    CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);""")
     cols = lambda t: {r[1] for r in c.execute(f"PRAGMA table_info({t})")}
     for col, typ in [("is_admin", "INTEGER DEFAULT 0"), ("last_seen", "REAL DEFAULT 0"),
                      ("typing_to", "INTEGER"), ("typing_ts", "REAL DEFAULT 0"),
@@ -94,6 +95,52 @@ def init_db():
 
 
 init_db()
+
+
+def get_setting(k, default=None):
+    r = db().execute("SELECT value FROM settings WHERE key=?", (k,)).fetchone()
+    return r["value"] if r else default
+
+
+def set_setting(k, v):
+    if v is None:
+        db().execute("DELETE FROM settings WHERE key=?", (k,))
+    else:
+        db().execute("INSERT INTO settings(key, value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (k, str(v)))
+    db().commit()
+
+
+def perform_global_wipe():
+    d = db()
+    rows = d.execute("SELECT file FROM messages WHERE file IS NOT NULL").fetchall()
+    for r in rows:
+        if r["file"]:
+            try:
+                p = os.path.join(UPLOADS, r["file"])
+                if os.path.isfile(p):
+                    os.remove(p)
+            except Exception:
+                pass
+    d.execute("DELETE FROM reactions")
+    d.execute("DELETE FROM messages")
+    d.commit()
+
+
+def check_wipe_timer():
+    target = get_setting("wipe_target_ts")
+    if not target:
+        return {"active": False, "remaining": 0}
+    try:
+        target_f = float(target)
+    except (ValueError, TypeError):
+        set_setting("wipe_target_ts", None)
+        return {"active": False, "remaining": 0}
+    now = time.time()
+    if now >= target_f:
+        perform_global_wipe()
+        set_setting("wipe_target_ts", None)
+        return {"active": False, "remaining": 0, "wiped": True}
+    return {"active": True, "remaining": max(0, int(target_f - now)), "target_ts": target_f}
 
 
 def me():
@@ -309,6 +356,7 @@ PAIR = "((m.sender=? AND m.recipient=?) OR (m.sender=? AND m.recipient=?))"
 @app.route("/api/messages")
 def messages():
     need_login()
+    wipe_info = check_wipe_timer()
     other = int(request.args.get("with", 0))
     after = int(request.args.get("after", 0))
     since = float(request.args.get("since", 0))
@@ -323,7 +371,7 @@ def messages():
         d.execute("UPDATE gmembers SET last_read=? WHERE gid=? AND uid=?", (max(ids, default=0), g_, me()))
         d.commit()
         rx_map = get_reactions_for_msgs([r["id"] for r in rows])
-        return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=False)
+        return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=False, wipe=wipe_info)
     if not is_admin() and other:
         other_user = d.execute("SELECT is_admin, space, is_hidden FROM users WHERE id=?", (other,)).fetchone()
         if not other_user:
@@ -344,7 +392,7 @@ def messages():
     typing = bool(t and t["typing_to"] == me() and now - (t["typing_ts"] or 0) < 4)
     ids = [r[0] for r in d.execute("SELECT m.id FROM messages m WHERE " + PAIR + " AND m.space=?", (me(), other, other, me(), sp))]
     rx_map = get_reactions_for_msgs([r["id"] for r in rows])
-    return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=typing)
+    return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=typing, wipe=wipe_info)
 
 
 @app.route("/api/send", methods=["POST"])
@@ -565,6 +613,34 @@ def admin_create_user():
     )
     db().commit()
     return jsonify(ok=True, id=cur.lastrowid, username=name, space=space, is_hidden=is_hid)
+
+
+@app.route("/api/wipe_status")
+def wipe_status():
+    need_login()
+    return jsonify(check_wipe_timer())
+
+
+@app.route("/api/admin/wipe_timer", methods=["POST"])
+def admin_wipe_timer():
+    admin_only()
+    act = request.form.get("action", "").strip().lower()
+    if act == "start":
+        secs = request.form.get("seconds", type=int)
+        if not secs or secs <= 0:
+            return jsonify(ok=False, error="Seconds must be greater than 0"), 400
+        target = time.time() + secs
+        set_setting("wipe_target_ts", target)
+        set_setting("wipe_duration", secs)
+        return jsonify(ok=True, active=True, remaining=secs, target_ts=target)
+    elif act == "cancel":
+        set_setting("wipe_target_ts", None)
+        return jsonify(ok=True, active=False, remaining=0)
+    elif act == "wipe_now":
+        perform_global_wipe()
+        set_setting("wipe_target_ts", None)
+        return jsonify(ok=True, active=False, wiped=True)
+    return jsonify(ok=False, error="Invalid action"), 400
 
 
 @app.route("/api/admin/delete_user/<int:uid>", methods=["POST"])
