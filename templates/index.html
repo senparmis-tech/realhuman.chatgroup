@@ -238,9 +238,40 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 .empty{margin:auto;color:var(--mut);font-size:15px}
 
 /* Overlay */
-.ov{display:none;position:absolute;inset:56px 0 0 0;background:var(--bg);overflow:auto;padding:16px;z-index:5}
+.ov{display:none;position:absolute;inset:56px 0 0 0;background:var(--bg);overflow:auto;padding:24px;z-index:5}
 .ov .r{padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:8px;transition:background .15s;margin:2px 0}
 .ov .r:hover{background:var(--them)}
+
+/* ─── Modern Accounts Management UI ─── */
+.acc-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.acc-topbar h3{margin:0;font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+.acc-create-box{background:var(--them);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:24px;box-shadow:0 2px 8px var(--shadow)}
+.acc-create-title{font-weight:700;font-size:14px;margin-bottom:12px;color:var(--fg);display:flex;align-items:center;gap:6px}
+.acc-form{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.acc-input{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13.5px;outline:none;transition:border-color .15s}
+.acc-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,184,148,.15)}
+.acc-select{padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;cursor:pointer;outline:none}
+.acc-user-card{background:var(--them);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;transition:all .15s}
+.acc-user-card:hover{border-color:rgba(0,184,148,.35);box-shadow:0 2px 6px var(--shadow)}
+.acc-u-info{display:flex;align-items:center;gap:10px;min-width:180px}
+.acc-u-name{font-weight:600;font-size:14px;color:var(--fg)}
+.acc-u-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;letter-spacing:.3px}
+.acc-u-badge.cm{background:rgba(0,184,148,.12);color:#00B894;border:1px solid rgba(0,184,148,.3)}
+.acc-u-badge.rh{background:rgba(99,102,241,.12);color:#6366F1;border:1px solid rgba(99,102,241,.3)}
+.acc-u-badge.adm{background:rgba(234,179,8,.12);color:#EAB308;border:1px solid rgba(234,179,8,.3)}
+.acc-actions-grp{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.acc-btn{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;transition:all .15s;font-family:inherit}
+.acc-btn:hover{background:var(--them);border-color:var(--acc)}
+.acc-btn-move{background:rgba(0,184,148,.12);color:var(--acc);border-color:rgba(0,184,148,.35);font-weight:600}
+.acc-btn-move:hover{background:var(--acc);color:#fff}
+.acc-btn-move.rh{background:rgba(99,102,241,.12);color:#6366F1;border-color:rgba(99,102,241,.35)}
+.acc-btn-move.rh:hover{background:#6366F1;color:#fff}
+.acc-perm{padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--line);transition:all .15s;font-family:inherit}
+.acc-perm.on{background:rgba(34,197,94,.15);color:#22C55E;border-color:rgba(34,197,94,.35);font-weight:700}
+.acc-perm.off{background:var(--bg);color:var(--mut);opacity:.7}
+.acc-perm.off:hover{opacity:1;border-color:var(--mut)}
+.acc-btn-del{padding:5px 10px;border-radius:8px;font-size:12px;color:#EF4444;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);cursor:pointer;transition:all .15s}
+.acc-btn-del:hover{background:#EF4444;color:#fff}
 
 /* ─── Mobile ─── */
 @media(max-width:640px){
@@ -410,6 +441,11 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
       {% if user.rename or user.admin %}<span class="lnk" id="rn">✏️ Rename</span>{% endif %}
       {% if user.admin %}<span class="lnk" id="ng">➕ New group</span><span class="lnk" id="na">➕ New account</span><span class="lnk" id="adm">⚙️ Accounts</span>{% endif %}
       <span class="lnk" id="delMe" style="color:#ef4444">🗑️ Delete account</span>
+      {% if user.admin %}
+      <span class="lnk" id="sideSpaceSwitch" style="color:var(--acc);font-weight:600;display:inline-flex;align-items:center;gap:4px;background:rgba(0,184,148,.12);border:1px solid rgba(0,184,148,.3);padding:4px 10px;border-radius:12px;cursor:pointer" title="Quickly switch chat space">
+        ⇄ Switch to {{ 'realhuman' if user.space == 'classmates' else 'classmates' }}
+      </span>
+      {% endif %}
     </div>
     <div class="sidebar-credit">
       Icon &amp; design credit: <a href="https://www.programiz.com" target="_blank" rel="noopener">Programiz</a>
@@ -825,29 +861,33 @@ $("adm").onclick=async function acc(){
   show(true);ov.innerHTML="";ov.style.display="block";
 
   const topBar = document.createElement("div");
-  topBar.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:14px";
-  const h = document.createElement("h3");
-  h.style.margin = "0";
-  h.textContent = "Accounts Management";
-  topBar.appendChild(h);
-  topBar.appendChild(mk("✕ Close", () => { ov.style.display = "none"; }));
+  topBar.className = "acc-topbar";
+  topBar.innerHTML = `
+    <div>
+      <h3>⚙️ Accounts Management</h3>
+      <div style="font-size:12px;color:var(--mut);margin-top:2px">Manage user accounts, assign spaces, and configure permissions</div>
+    </div>
+  `;
+  const closeBtn = mk("✕ Close", () => { ov.style.display = "none"; });
+  closeBtn.style.padding = "6px 14px";
+  topBar.appendChild(closeBtn);
   ov.appendChild(topBar);
 
   const formBox = document.createElement("div");
-  formBox.style.cssText = "background:var(--them);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px";
+  formBox.className = "acc-create-box";
   formBox.innerHTML = `
-    <div style="font-weight:600;font-size:14px;margin-bottom:10px;color:var(--fg)">➕ Create New Account</div>
-    <form id="createAccForm" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-      <input id="newAccUser" placeholder="Username" required style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;width:140px">
-      <input id="newAccPw" type="password" placeholder="Password (4+)" required style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;width:150px">
-      <select id="newAccSpace" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;cursor:pointer">
-        <option value="classmates">classmates</option>
-        <option value="realhuman">realhuman</option>
+    <div class="acc-create-title">➕ Create New Account</div>
+    <form id="createAccForm" class="acc-form">
+      <input id="newAccUser" class="acc-input" placeholder="Username" required style="width:150px">
+      <input id="newAccPw" class="acc-input" type="password" placeholder="Password (4+)" required style="width:160px">
+      <select id="newAccSpace" class="acc-select">
+        <option value="classmates">Space: classmates</option>
+        <option value="realhuman">Space: realhuman</option>
       </select>
-      <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;color:var(--fg);user-select:none">
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--fg);user-select:none">
         <input id="newAccAdmin" type="checkbox"> Admin
       </label>
-      <button type="submit" style="padding:8px 18px;border-radius:8px;font-size:13px;background:var(--acc);color:#fff;border:none;cursor:pointer;font-weight:600">Create</button>
+      <button type="submit" style="padding:9px 20px;border-radius:10px;font-size:13.5px;background:var(--acc);color:#fff;border:none;cursor:pointer;font-weight:700">Create</button>
       <span id="createAccErr" style="color:#ef4444;font-size:12px;display:none;margin-left:6px"></span>
     </form>
   `;
@@ -886,60 +926,117 @@ $("adm").onclick=async function acc(){
     else spGroups[u.space || "classmates"].push(u);
   });
 
-  const set = async(id,f,v) => {
-    const r = await fetch(`/api/admin/set/${id}`, {method:"POST", body:new URLSearchParams({field:f,value:v})});
-    if(!r.ok) alert(r.status===409?"Name already taken":r.status===400?"Invalid value / need at least one admin":"Not allowed");
-    acc();loadUsers();
+  const set = async(id, f, v) => {
+    const r = await fetch(`/api/admin/set/${id}`, {method: "POST", body: new URLSearchParams({field: f, value: v})});
+    if(!r.ok) alert(r.status === 409 ? "Name already taken" : r.status === 400 ? "Invalid value / need at least one admin" : "Not allowed");
+    acc(); loadUsers();
   };
 
   const renderUserRow = (u) => {
-    const d = document.createElement("div");
-    d.className = "r";
-    d.style.cursor = "default";
-    const spTag = u.is_admin ? " (admin)" : ` [${u.space||"classmates"}]`;
-    d.append(u.username + spTag + "  ");
-    d.appendChild(mk("Rename", () => { const n=prompt("New name", u.username); if(n&&n.trim()) set(u.id,"name",n); }));
-    d.append(" ");
-    d.appendChild(mk("Reset Password", () => { const p=prompt("New password for "+u.username); if(p&&p.length>=4) set(u.id,"pw",p); else if(p) alert("Password must be 4+ characters"); }));
+    const card = document.createElement("div");
+    card.className = "acc-user-card";
+
+    const info = document.createElement("div");
+    info.className = "acc-u-info";
+    const avatar = av(u.username, false);
+    avatar.style.width = "32px";
+    avatar.style.height = "32px";
+    avatar.style.fontSize = "13px";
+    info.appendChild(avatar);
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "acc-u-name";
+    nameSpan.textContent = u.username;
+    info.appendChild(nameSpan);
+
+    if(u.is_admin){
+      const admBadge = document.createElement("span");
+      admBadge.className = "acc-u-badge adm";
+      admBadge.textContent = "Admin";
+      info.appendChild(admBadge);
+    } else {
+      const spBadge = document.createElement("span");
+      const isCm = (u.space || "classmates") === "classmates";
+      spBadge.className = "acc-u-badge " + (isCm ? "cm" : "rh");
+      spBadge.textContent = u.space || "classmates";
+      info.appendChild(spBadge);
+    }
+    card.appendChild(info);
+
+    const acts = document.createElement("div");
+    acts.className = "acc-actions-grp";
+
     if(!u.is_admin){
       const curSp = u.space || "classmates";
       const otherSp = curSp === "classmates" ? "realhuman" : "classmates";
-      d.append(" ");
-      d.appendChild(mk(`Move to ${otherSp}`, async () => {
-        if(confirm(`Move "${u.username}" from [${curSp}] to [${otherSp}]?\n\nTheir existing chat history stays in [${curSp}]. They will see [${otherSp}] chats on their next login.`)){
+      const moveBtn = document.createElement("button");
+      moveBtn.type = "button";
+      moveBtn.className = "acc-btn acc-btn-move" + (curSp === "classmates" ? " rh" : "");
+      moveBtn.textContent = `⇄ Move to ${otherSp}`;
+      moveBtn.onclick = async () => {
+        if(confirm(`Move "${u.username}" from [${curSp}] to [${otherSp}]?\n\nTheir chat history stays separate in [${curSp}]. They will only see [${otherSp}] chats on their next login.`)){
           await set(u.id, "space", otherSp);
         }
-      }));
+      };
+      acts.appendChild(moveBtn);
     }
-    [["is_admin","Admin"],["can_rename","Rename"],["can_upload","Upload"],["can_unsend","Unsend"]].forEach(([f,l]) => {
-      d.append(" ");
-      d.appendChild(mk(l+":"+(u[f]?"on":"off"), () => set(u.id, f, u[f]?"0":"1")));
+
+    const rnBtn = document.createElement("button");
+    rnBtn.type = "button";
+    rnBtn.className = "acc-btn";
+    rnBtn.textContent = "✏️ Rename";
+    rnBtn.onclick = () => { const n = prompt("New name", u.username); if(n && n.trim()) set(u.id, "name", n); };
+    acts.appendChild(rnBtn);
+
+    const pwBtn = document.createElement("button");
+    pwBtn.type = "button";
+    pwBtn.className = "acc-btn";
+    pwBtn.textContent = "🔑 Password";
+    pwBtn.onclick = () => { const p = prompt("New password for " + u.username); if(p && p.length >= 4) set(u.id, "pw", p); else if(p) alert("Password must be 4+ characters"); };
+    acts.appendChild(pwBtn);
+
+    [["is_admin", "Admin"], ["can_rename", "Rename"], ["can_upload", "Upload"], ["can_unsend", "Unsend"]].forEach(([f, l]) => {
+      const pBtn = document.createElement("button");
+      pBtn.type = "button";
+      pBtn.className = "acc-perm " + (u[f] ? "on" : "off");
+      pBtn.textContent = l + (u[f] ? " ✓" : " ✗");
+      pBtn.title = "Toggle " + l;
+      pBtn.onclick = () => set(u.id, f, u[f] ? "0" : "1");
+      acts.appendChild(pBtn);
     });
+
     if(u.id !== ME){
-      d.append(" ");
-      d.appendChild(mk("Delete", async () => {
-        if(confirm("Delete "+u.username+" and all their messages?")){
-          await fetch("/api/admin/delete_user/"+u.id, {method:"POST"});
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "acc-btn-del";
+      delBtn.textContent = "🗑️ Delete";
+      delBtn.onclick = async () => {
+        if(confirm(`Delete "${u.username}" and all their messages?`)){
+          await fetch("/api/admin/delete_user/" + u.id, {method: "POST"});
           acc(); loadUsers();
         }
-      }));
+      };
+      acts.appendChild(delBtn);
     }
-    return d;
+
+    card.appendChild(acts);
+    return card;
   };
 
-  [["classmates", "classmates space"], ["realhuman", "realhuman space"], ["admin", "Admins"]].forEach(([key, label]) => {
+  [["classmates", "Classmates Space", "cm"], ["realhuman", "Realhuman Space", "rh"], ["admin", "Administrators", "adm"]].forEach(([key, label, badgeClass]) => {
     if(!spGroups[key].length) return;
     const hdr = document.createElement("div");
-    hdr.className = "section-label";
-    hdr.style.padding = "10px 0 6px 0";
-    hdr.textContent = label + " (" + spGroups[key].length + ")";
+    hdr.style.cssText = "display:flex;align-items:center;gap:8px;padding:16px 4px 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--mut)";
+    hdr.innerHTML = `<span>${label}</span> <span class="acc-u-badge ${badgeClass}">${spGroups[key].length}</span>`;
     ov.appendChild(hdr);
     spGroups[key].forEach(u => ov.appendChild(renderUserRow(u)));
   });
 
   const foot = document.createElement("div");
-  foot.style.marginTop = "14px";
-  foot.appendChild(mk("Close", () => {ov.style.display="none"}));
+  foot.style.marginTop = "18px";
+  const btmClose = mk("✕ Close", () => { ov.style.display = "none"; });
+  btmClose.style.padding = "6px 16px";
+  foot.appendChild(btmClose);
   ov.appendChild(foot);
 };
 if($("na")){
@@ -966,14 +1063,15 @@ if($("delMe")){
     }
   };
 }
-if($("spaceSwitchBtn")){
-  $("spaceSwitchBtn").onclick = async () => {
-    const curSp = "{{ user.space }}";
-    const nextSp = curSp === "classmates" ? "realhuman" : "classmates";
-    const r = await fetch("/api/space/" + nextSp, {method: "POST"});
-    if(r.ok) location.reload();
-  };
-}
+const switchSpaceFn = async () => {
+  const curSp = "{{ user.space }}";
+  const nextSp = curSp === "classmates" ? "realhuman" : "classmates";
+  const r = await fetch("/api/space/" + nextSp, {method: "POST"});
+  if(r.ok) location.reload();
+  else alert("Could not switch space");
+};
+if($("spaceSwitchBtn")) $("spaceSwitchBtn").onclick = switchSpaceFn;
+if($("sideSpaceSwitch")) $("sideSpaceSwitch").onclick = switchSpaceFn;
 loadUsers();loadGroups(); setInterval(poll,2000); setInterval(()=>{loadUsers();loadGroups()},5000);
 if(!mobile())$("main").classList.remove("hide");
 </script>
