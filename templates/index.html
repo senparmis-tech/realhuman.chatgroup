@@ -47,8 +47,13 @@ button.g:hover{background:var(--line)}
 .app{display:flex;flex:1;min-height:0}
 
 /* ─── Sidebar ─── */
-.side{width:300px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column}
-.side h3{margin:0;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:700;border-bottom:1px solid var(--line)}
+.side{width:300px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;transition:width .25s ease, opacity .2s ease;overflow:hidden}
+.side.closed{width:0 !important;min-width:0 !important;border-right:none !important;opacity:0;pointer-events:none}
+.side h3{margin:0;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap}
+.side-close-btn{background:none;border:none;cursor:pointer;font-size:16px;color:var(--mut);padding:4px 8px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.side-close-btn:hover{background:var(--them);color:var(--fg)}
+.side-toggle-btn{background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--fg);transition:all .2s;margin-right:6px;flex-shrink:0}
+.side-toggle-btn:hover{background:var(--them);border-color:var(--acc);color:var(--acc)}
 .side a,.side .lnk{font-size:13px;color:var(--mut);cursor:pointer;text-decoration:none;transition:color .2s}
 .side a:hover,.side .lnk:hover{color:var(--acc)}
 .section-label{padding:12px 20px 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--mut)}
@@ -150,12 +155,14 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 @media(max-width:640px){
   .side{width:100%;display:none}
   .side.show{display:flex}
+  .side.closed{display:none !important}
   .main.hide{display:none}
   .head input{width:100px}
   .emoji-picker{left:10px;right:10px;width:auto}
 }
 </style></head><body>
 <div class="nav">
+  {% if user %}<button class="side-toggle-btn" id="sideToggle" type="button" title="Toggle chats sidebar">☰</button>{% endif %}
   <span class="lg">&gt;_</span>programiz
   <div class="nav-right">
     {% if user %}<small>{{ user.name }}</small>{% endif %}
@@ -195,7 +202,13 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 {% else %}
 <div class="app">
   <div class="side show" id="side">
-    <h3>Chats <a href="/logout">Log out</a></h3>
+    <h3>
+      <span>Chats</span>
+      <span style="display:flex;gap:12px;align-items:center">
+        <a href="/logout">Log out</a>
+        <button class="side-close-btn" id="closeSideBtn" type="button" title="Close sidebar">✕</button>
+      </span>
+    </h3>
     <div style="flex:1;overflow:auto">
       <div id="groups"></div>
       <div class="section-label">Direct messages</div>
@@ -323,7 +336,32 @@ function formatBody(text){
 }
 
 function av(name,on,txt){const d=document.createElement("div");d.className="av"+(on?" on":"");d.style.background=col(name);d.textContent=txt||name[0].toUpperCase();return d}
-function show(chat){ $("side").classList.toggle("show",!chat); $("main").classList.toggle("hide",!chat&&mobile()); $("back").style.display=chat&&mobile()?"inline":"none"; }
+
+function toggleSide(force){
+  const s = $("side");
+  const isClosed = force !== undefined ? !force : !s.classList.contains("closed");
+  s.classList.toggle("closed", isClosed);
+  localStorage.setItem("side_closed", isClosed ? "1" : "0");
+  if(mobile()){
+    s.classList.toggle("show", !isClosed);
+    $("main").classList.toggle("hide", !isClosed);
+    $("back").style.display = isClosed ? "inline" : "none";
+  }
+}
+if($("sideToggle")) $("sideToggle").onclick = () => toggleSide();
+if($("closeSideBtn")) $("closeSideBtn").onclick = () => toggleSide(false);
+if(localStorage.getItem("side_closed") === "1" && !mobile()){
+  $("side").classList.add("closed");
+}
+
+function show(chat){
+  if(mobile()){
+    $("side").classList.toggle("show", !chat);
+    $("side").classList.toggle("closed", chat);
+    $("main").classList.toggle("hide", !chat);
+    $("back").style.display = chat ? "inline" : "none";
+  }
+}
 $("back").onclick=e=>{e.preventDefault();show(false)};
 function notify(t,b){ if(window.Notification&&Notification.permission==="granted"&&document.hidden)new Notification(t,{body:b}) }
 $("nb").onclick=()=>{ if(!window.Notification)return alert("Not supported in this browser");
