@@ -440,8 +440,10 @@ function render(m){
   const a=document.createElement("div");a.className="acts";
   const B=(l,f)=>{const b=document.createElement("button");b.type="button";b.textContent=l;b.onclick=e=>{e.stopPropagation();f()};a.appendChild(b)};
   B("Reply",()=>{reply={id:m.id,text:(m.body||m.fname||"").slice(0,60)};rb();$("body").focus();d.classList.remove("act")});
-  if(m.sender===ME){
-    if(m.body)B("Edit",async()=>{const v=prompt("Edit message",m.body);if(v&&v.trim()&&v!==m.body){await fetch("/api/edit/"+m.id,{method:"POST",body:new URLSearchParams({body:v})});poll()}});
+  if(m.sender===ME && m.body){
+    B("Edit",async()=>{const v=prompt("Edit message",m.body);if(v&&v.trim()&&v!==m.body){await fetch("/api/edit/"+m.id,{method:"POST",body:new URLSearchParams({body:v})});poll()}});
+  }
+  if(m.sender===ME || ADMIN){
     B("Unsend",async()=>{if(confirm("Unsend this message? It disappears for everyone with no trace.")){await fetch("/api/delete/"+m.id,{method:"POST"});poll()}});
   }
 
@@ -484,7 +486,7 @@ async function poll(){
   if(newOnes&&near)box.scrollTop=box.scrollHeight;
   if(t==="u"){$("st").dataset.typing=r.typing?"1":"";$("st").textContent=r.typing?"typing…":(curU&&curU.online?"Active now":"")}
   const e=box.querySelector(".empty");
-  if(!r.ids.length&&!e)box.innerHTML='<div class="empty">Say hi 👋</div>';else if(r.ids.length&&e)e.remove();
+  if(e)e.remove();
 }
 $("file").onchange=e=>$("fn").textContent=e.target.files[0]?.name||"";
 

@@ -351,12 +351,22 @@ def react(mid):
     return jsonify(ok=True)
 
 
+def deletable_msg(mid):
+    r = db().execute("SELECT * FROM messages WHERE id=?", (mid,)).fetchone()
+    if not r or r["deleted"]:
+        abort(404)
+    if r["sender"] == me() and can("can_unsend"):
+        return r
+    if is_admin():
+        return r
+    abort(403)
+
+
 @app.route("/api/delete/<int:mid>", methods=["POST"])
 def delete(mid):
     need_login()
-    if not can("can_unsend"):
-        abort(403)
-    kill_msg(own_msg(mid))
+    r = deletable_msg(mid)
+    kill_msg(r)
     db().commit()
     return jsonify(ok=True)
 
