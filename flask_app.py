@@ -188,8 +188,10 @@ def auth():
                            (name, generate_password_hash(pw), 1 if first else 0))
         db().commit()
         row = db().execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone()
+    elif not invite:
+        bad = "New account? Enter an invite code. Returning? Invalid username/password"
     else:
-        bad = "Invalid username or password"
+        bad = "Invalid invite code"
     if bad:
         n, t = fails.get(request.remote_addr, (0, time.time()))
         fails[request.remote_addr] = (n + 1, t)

@@ -59,15 +59,15 @@ body{font:15px/1.5 "Inter","Segoe UI",system-ui,sans-serif;background:var(--bg);
 .hero-trust{font-size:14px;font-weight:600;color:#64748B;margin:0 0 22px}
 [data-theme="dark"] .hero-trust{color:#CBD5E1}
 
-/* The dark card matching the screenshot */
-.login-card{background:#141C2E;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:26px 28px;box-shadow:0 14px 40px rgba(0,0,0,.22);max-width:360px}
-.login-card h2{color:#fff;font-size:20px;font-weight:700;margin:0 0 4px;text-align:center;letter-spacing:-.3px}
-.login-card .login-sub{color:#94A3B8;font-size:13px;margin:0 0 18px;text-align:center}
-.login-card input{width:100%;padding:12px 14px;margin-bottom:12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0F172A;color:#F8FAFC;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s}
-.login-card input:focus{border-color:#00B894;box-shadow:0 0 0 3px rgba(0,184,148,.25)}
-.login-card .login-btn{width:100%;padding:12px;background:#00B894;color:#fff;font-weight:700;font-size:14px;border:none;border-radius:10px;cursor:pointer;transition:background .15s;margin-top:4px}
-.login-card .login-btn:hover{background:#00A080}
-.login-card .err{color:#F87171;font-size:13px;margin-top:10px;text-align:center;font-weight:500}
+/* The login card - perfectly blended into both light and dark themes */
+.login-card{background:var(--login-bg);border:1px solid var(--line);border-radius:18px;padding:28px 28px;box-shadow:0 10px 30px var(--shadow),0 1px 3px rgba(0,0,0,0.04);max-width:380px;width:100%}
+.login-card h2{color:var(--fg);font-size:21px;font-weight:700;margin:0 0 4px;text-align:center;letter-spacing:-.3px}
+.login-card .login-sub{color:var(--mut);font-size:13.5px;margin:0 0 18px;text-align:center}
+.login-card input{width:100%;padding:12px 14px;margin-bottom:12px;border-radius:10px;border:1px solid var(--line);background:var(--side);color:var(--fg);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s,background .2s}
+.login-card input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,184,148,.18);background:var(--bg)}
+.login-card .login-btn{width:100%;padding:12.5px;background:var(--acc);color:#fff;font-weight:700;font-size:15px;border:none;border-radius:10px;cursor:pointer;transition:background .15s,transform .1s;margin-top:4px}
+.login-card .login-btn:hover{background:var(--acc-hover)}
+.login-card .err{color:#EF4444;font-size:13px;margin-top:10px;text-align:center;font-weight:500;background:rgba(239,68,68,0.08);padding:7px 12px;border-radius:8px}
 
 /* Hero Right: illustrations and mockups */
 .hero-right{flex:1;position:relative;min-height:430px;display:flex;align-items:center;justify-content:center}
@@ -303,10 +303,11 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 
       <form class="login-card" method="post" action="/auth" autocomplete="off">
         <h2>Welcome to programiz</h2>
-        <p class="login-sub">Sign in to your account</p>
+        <p class="login-sub">Sign in or create account</p>
         <input name="username" placeholder="Username" required autocomplete="username">
         <input name="password" type="password" placeholder="Password" required autocomplete="current-password">
-        <button type="submit" class="login-btn">Sign in</button>
+        <input name="invite" placeholder="Invite code (optional for existing)" autocomplete="off">
+        <button type="submit" class="login-btn">Sign in / Create account</button>
         {% if error %}<div class="err">{{ error }}</div>{% endif %}
       </form>
     </div>
