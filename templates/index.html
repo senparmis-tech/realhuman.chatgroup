@@ -270,6 +270,7 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 .acc-perm.on{background:rgba(34,197,94,.15);color:#22C55E;border-color:rgba(34,197,94,.35);font-weight:700}
 .acc-perm.off{background:var(--bg);color:var(--mut);opacity:.7}
 .acc-perm.off:hover{opacity:1;border-color:var(--mut)}
+.acc-perm.hidden-active{background:rgba(239,68,68,.15);color:#ef4444;border-color:rgba(239,68,68,.4);font-weight:700}
 .acc-btn-del{padding:5px 10px;border-radius:8px;font-size:12px;color:#EF4444;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);cursor:pointer;transition:all .15s}
 .acc-btn-del:hover{background:#EF4444;color:#fff}
 
@@ -599,8 +600,15 @@ $("nb").onclick=()=>{ if(!window.Notification)return alert("Not supported in thi
   Notification.requestPermission().then(p=>$("nb").textContent=p==="granted"?"🔔 Notifications on":"🔕 Blocked") };
 if(window.Notification&&Notification.permission==="granted")$("nb").textContent="🔔 Notifications on";
 const title=()=>{const t=uTot+gTot;document.title=(t?`(${t}) `:"")+"programiz"};
-function row(av_,name,n,on,fn,delFn){const d=document.createElement("div");d.className="u"+(on?" on":"");d.appendChild(av_);
-  const s=document.createElement("span");s.className="n";s.textContent=name;d.appendChild(s);
+function row(av_,name,n,on,fn,delFn,hiddenBadge){const d=document.createElement("div");d.className="u"+(on?" on":"");d.appendChild(av_);
+  const s=document.createElement("span");s.className="n";s.textContent=name;
+  if(hiddenBadge){
+    const hb=document.createElement("small");
+    hb.style.cssText="margin-left:6px;font-size:10px;opacity:.75;color:#ef4444;font-weight:600";
+    hb.textContent="[hidden]";
+    s.appendChild(hb);
+  }
+  d.appendChild(s);
   if(n){const b=document.createElement("span");b.className="dot";b.textContent=n;d.appendChild(b)}
   if(delFn){
     const b=document.createElement("button");
@@ -636,7 +644,7 @@ async function loadUsers(){
         }
       }
     } : null;
-    box.appendChild(row(av(u.username,u.online),u.username,n,here,()=>open(u),delFn));
+    box.appendChild(row(av(u.username,u.online),u.username,n,here,()=>open(u),delFn,Boolean(ADMIN && u.is_hidden)));
   });
   first=false; title();
   if(!us.length) box.innerHTML='<div class="hint" style="padding:16px">No other users in this chat yet.</div>';
@@ -887,6 +895,9 @@ $("adm").onclick=async function acc(){
       <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--fg);user-select:none">
         <input id="newAccAdmin" type="checkbox"> Admin
       </label>
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--fg);user-select:none">
+        <input id="newAccHide" type="checkbox"> Hide account
+      </label>
       <button type="submit" style="padding:9px 20px;border-radius:10px;font-size:13.5px;background:var(--acc);color:#fff;border:none;cursor:pointer;font-weight:700">Create</button>
       <span id="createAccErr" style="color:#ef4444;font-size:12px;display:none;margin-left:6px"></span>
     </form>
@@ -898,6 +909,7 @@ $("adm").onclick=async function acc(){
     const u = $("newAccUser").value.trim();
     const p = $("newAccPw").value;
     const isAdm = $("newAccAdmin").checked ? "1" : "0";
+    const isHid = $("newAccHide").checked ? "1" : "0";
     const space = $("newAccSpace").value;
     const err = $("createAccErr");
     err.style.display = "none";
@@ -908,7 +920,7 @@ $("adm").onclick=async function acc(){
     }
     const res = await fetch("/api/admin/create_user", {
       method: "POST",
-      body: new URLSearchParams({username: u, password: p, is_admin: isAdm, space})
+      body: new URLSearchParams({username: u, password: p, is_admin: isAdm, space, is_hidden: isHid})
     });
     const data = await res.json();
     if(!res.ok){
@@ -960,6 +972,13 @@ $("adm").onclick=async function acc(){
       spBadge.className = "acc-u-badge " + (isCm ? "cm" : "rh");
       spBadge.textContent = u.space || "classmates";
       info.appendChild(spBadge);
+      if(u.is_hidden){
+        const hidBadge = document.createElement("span");
+        hidBadge.className = "acc-u-badge";
+        hidBadge.style.cssText = "background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);font-size:10px";
+        hidBadge.textContent = "Hidden 👁️‍🗨️";
+        info.appendChild(hidBadge);
+      }
     }
     card.appendChild(info);
 
@@ -979,6 +998,14 @@ $("adm").onclick=async function acc(){
         }
       };
       acts.appendChild(moveBtn);
+
+      const hideBtn = document.createElement("button");
+      hideBtn.type = "button";
+      hideBtn.className = "acc-perm " + (u.is_hidden ? "hidden-active" : "off");
+      hideBtn.textContent = u.is_hidden ? "Hidden: on 👁️‍🗨️" : "Hidden: off 👁️";
+      hideBtn.title = u.is_hidden ? "Account is hidden from member list. Click to make visible." : "Click to hide account from member list.";
+      hideBtn.onclick = () => set(u.id, "is_hidden", u.is_hidden ? "0" : "1");
+      acts.appendChild(hideBtn);
     }
 
     const rnBtn = document.createElement("button");

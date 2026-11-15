@@ -67,7 +67,8 @@ def init_db():
     for col, typ in [("is_admin", "INTEGER DEFAULT 0"), ("last_seen", "REAL DEFAULT 0"),
                      ("typing_to", "INTEGER"), ("typing_ts", "REAL DEFAULT 0"),
                      ("can_rename", "INTEGER DEFAULT 0"), ("can_upload", "INTEGER DEFAULT 1"),
-                     ("can_unsend", "INTEGER DEFAULT 1"), ("space", "TEXT DEFAULT 'classmates'")]:
+                     ("can_unsend", "INTEGER DEFAULT 1"), ("space", "TEXT DEFAULT 'classmates'"),
+                     ("is_hidden", "INTEGER DEFAULT 0")]:
         if col not in cols("users"):
             c.execute(f"ALTER TABLE users ADD COLUMN {col} {typ}")
     for col, typ in [("edited", "INTEGER DEFAULT 0"), ("deleted", "INTEGER DEFAULT 0"),
@@ -78,6 +79,7 @@ def init_db():
     if "space" not in cols("groups"):
         c.execute("ALTER TABLE groups ADD COLUMN space TEXT DEFAULT 'classmates'")
     c.execute("UPDATE users SET space='classmates' WHERE space IS NULL OR space=''")
+    c.execute("UPDATE users SET is_hidden=0 WHERE is_hidden IS NULL")
     c.execute("UPDATE messages SET space='classmates' WHERE space IS NULL OR space=''")
     c.execute("UPDATE groups SET space='classmates' WHERE space IS NULL OR space=''")
     c.execute("DELETE FROM messages WHERE deleted=1")  # old "deleted" placeholders: remove all trace
@@ -240,20 +242,32 @@ def users():
     need_login()
     now = time.time()
     sp = current_space()
-    # Admins see everyone (across all spaces, filtered by their current viewed space);
-    # regular users only see admins + users in their own space
     if is_admin():
         rows = db().execute("""
-          SELECT u.id, u.username, u.last_seen, u.space,
-            (SELECT COUNT(*) FROM messages WHERE sender=u.id AND recipient=? AND read_ts IS NULL AND deleted=0 AND space=?) AS unread
-          FROM users u WHERE u.id<>? ORDER BY u.username""", (me(), sp, me())).fetchall()
-    else:
-        rows = db().execute("""
-          SELECT u.id, u.username, u.last_seen, u.space,
+          SELECT u.id, u.username, u.last_seen, u.space, u.is_hidden,
             (SELECT COUNT(*) FROM messages WHERE sender=u.id AND recipient=? AND read_ts IS NULL AND deleted=0 AND space=?) AS unread
           FROM users u WHERE u.id<>? AND (u.is_admin=1 OR u.space=?) ORDER BY u.username""", (me(), sp, me(), sp)).fetchall()
-    return jsonify([dict(id=r["id"], username=r["username"], unread=r["unread"],
-                         online=now - (r["last_seen"] or 0) < 15) for r in rows])
+        return jsonify([dict(id=r["id"], username=r["username"], unread=r["unread"],
+                             online=now - (r["last_seen"] or 0) < 15,
+                             is_hidden=bool(r["is_hidden"])) for r in rows])
+    else:
+        # Non-admins:
+        # 1. Non-admins in their space who are NOT hidden
+        # 2. Admins ONLY IF the admin has messaged this user in this space
+        rows = db().execute("""
+          SELECT u.id, u.username, u.last_seen,
+            (SELECT COUNT(*) FROM messages WHERE sender=u.id AND recipient=? AND read_ts IS NULL AND deleted=0 AND space=?) AS unread
+          FROM users u
+          WHERE u.id<>?
+            AND (
+              (u.is_admin=0 AND u.space=? AND (u.is_hidden=0 OR u.is_hidden IS NULL))
+              OR
+              (u.is_admin=1 AND EXISTS(SELECT 1 FROM messages WHERE sender=u.id AND recipient=? AND space=?))
+            )
+          ORDER BY u.username""", (me(), sp, me(), sp, me(), sp)).fetchall()
+        return jsonify([dict(id=r["id"], username=r["username"], unread=r["unread"],
+                             online=now - (r["last_seen"] or 0) < 15,
+                             is_hidden=False) for r in rows])
 
 
 def get_reactions_for_msgs(mids):
@@ -310,6 +324,17 @@ def messages():
         d.commit()
         rx_map = get_reactions_for_msgs([r["id"] for r in rows])
         return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=False)
+    if not is_admin() and other:
+        other_user = d.execute("SELECT is_admin, space, is_hidden FROM users WHERE id=?", (other,)).fetchone()
+        if not other_user:
+            abort(404)
+        if other_user["is_admin"]:
+            has_admin_msg = d.execute("SELECT 1 FROM messages WHERE sender=? AND recipient=? AND space=?", (other, me(), sp)).fetchone()
+            if not has_admin_msg:
+                abort(403)
+        else:
+            if other_user["space"] != sp or other_user["is_hidden"]:
+                abort(403)
     d.execute("UPDATE messages SET read_ts=?, upd=? WHERE sender=? AND recipient=? AND read_ts IS NULL AND space=?",
               (now, now, other, me(), sp))
     d.commit()
@@ -327,11 +352,23 @@ def send():
     need_login()
     other = request.form.get("to", 0, type=int)
     g_ = request.form.get("g", type=int)
+    sp = current_space()
     if g_:
         gm(g_)
         other = None
     elif other == me() or not db().execute("SELECT 1 FROM users WHERE id=?", (other,)).fetchone():
         abort(400)
+    elif not is_admin() and other:
+        recip = db().execute("SELECT is_admin, space, is_hidden FROM users WHERE id=?", (other,)).fetchone()
+        if not recip:
+            abort(404)
+        if recip["is_admin"]:
+            has_admin_msg = db().execute("SELECT 1 FROM messages WHERE sender=? AND recipient=? AND space=?", (other, me(), sp)).fetchone()
+            if not has_admin_msg:
+                abort(403)
+        else:
+            if recip["space"] != sp or recip["is_hidden"]:
+                abort(403)
     body = request.form.get("body", "").strip()[:4000]
     reply = request.form.get("reply_to", type=int)
     ok = (db().execute("SELECT 1 FROM messages WHERE id=? AND grp=?", (reply, g_)) if g_ else
@@ -465,7 +502,7 @@ def search():
 @app.route("/api/admin/users")
 def admin_users():
     admin_only()
-    rows = db().execute("SELECT id, username, is_admin, can_rename, can_upload, can_unsend, space FROM users ORDER BY id").fetchall()
+    rows = db().execute("SELECT id, username, is_admin, can_rename, can_upload, can_unsend, space, is_hidden FROM users ORDER BY id").fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -494,7 +531,7 @@ def admin_set(uid):
             abort(400)
         db().execute("UPDATE users SET space=? WHERE id=?", (v, uid))
         db().commit()
-    elif f in ("is_admin", "can_rename", "can_upload", "can_unsend"):
+    elif f in ("is_admin", "can_rename", "can_upload", "can_unsend", "is_hidden"):
         val = 1 if v == "1" else 0
         if f == "is_admin" and not val and not db().execute(
                 "SELECT 1 FROM users WHERE is_admin=1 AND id<>?", (uid,)).fetchone():
@@ -512,6 +549,7 @@ def admin_create_user():
     name = request.form.get("username", "").strip()[:30]
     pw = request.form.get("password", "")
     is_adm = 1 if request.form.get("is_admin") in ("1", "true", "on") else 0
+    is_hid = 1 if request.form.get("is_hidden") in ("1", "true", "on") else 0
     space = request.form.get("space", DEFAULT_SPACE).strip().lower()
     if space not in VALID_SPACES:
         space = DEFAULT_SPACE
@@ -522,11 +560,11 @@ def admin_create_user():
     if db().execute("SELECT 1 FROM users WHERE username=? COLLATE NOCASE", (name,)).fetchone():
         return jsonify(ok=False, error="Username already taken"), 409
     cur = db().execute(
-        "INSERT INTO users(username, pw, is_admin, can_rename, can_upload, can_unsend, space) VALUES(?,?,?,?,1,1,?)",
-        (name, generate_password_hash(pw), is_adm, 1 if is_adm else 0, space)
+        "INSERT INTO users(username, pw, is_admin, can_rename, can_upload, can_unsend, space, is_hidden) VALUES(?,?,?,?,1,1,?,?)",
+        (name, generate_password_hash(pw), is_adm, 1 if is_adm else 0, space, is_hid)
     )
     db().commit()
-    return jsonify(ok=True, id=cur.lastrowid, username=name, space=space)
+    return jsonify(ok=True, id=cur.lastrowid, username=name, space=space, is_hidden=is_hid)
 
 
 @app.route("/api/admin/delete_user/<int:uid>", methods=["POST"])
