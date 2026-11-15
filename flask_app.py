@@ -59,7 +59,8 @@ def init_db():
       body TEXT, file TEXT, fname TEXT, mime TEXT, ts REAL);""")
     c.executescript("""
     CREATE TABLE IF NOT EXISTS groups(id INTEGER PRIMARY KEY, name TEXT);
-    CREATE TABLE IF NOT EXISTS gmembers(gid INTEGER, uid INTEGER, last_read INTEGER DEFAULT 0, PRIMARY KEY(gid,uid));""")
+    CREATE TABLE IF NOT EXISTS gmembers(gid INTEGER, uid INTEGER, last_read INTEGER DEFAULT 0, PRIMARY KEY(gid,uid));
+    CREATE TABLE IF NOT EXISTS reactions(mid INTEGER, uid INTEGER, emoji TEXT, PRIMARY KEY(mid,uid,emoji));""")
     cols = lambda t: {r[1] for r in c.execute(f"PRAGMA table_info({t})")}
     for col, typ in [("is_admin", "INTEGER DEFAULT 0"), ("last_seen", "REAL DEFAULT 0"),
                      ("typing_to", "INTEGER"), ("typing_ts", "REAL DEFAULT 0"),
@@ -194,13 +195,34 @@ def users():
                          online=now - (r["last_seen"] or 0) < 15) for r in rows])
 
 
-def row_json(r):
+def get_reactions_for_msgs(mids):
+    if not mids:
+        return {}
+    q = f"SELECT r.mid, r.emoji, r.uid, u.username FROM reactions r JOIN users u ON u.id=r.uid WHERE r.mid IN ({','.join('?'*len(mids))})"
+    res = {}
+    for r in db().execute(q, mids).fetchall():
+        mid = r["mid"]
+        if mid not in res:
+            res[mid] = {}
+        emo = r["emoji"]
+        if emo not in res[mid]:
+            res[mid][emo] = {"count": 0, "users": [], "has_me": False}
+        res[mid][emo]["count"] += 1
+        res[mid][emo]["users"].append(r["username"])
+        if r["uid"] == me():
+            res[mid][emo]["has_me"] = True
+    return res
+
+
+def row_json(r, rx_map=None):
     ext = (r["fname"] or "").rsplit(".", 1)[-1].lower()
     dele = bool(r["deleted"])
+    rx = (rx_map.get(r["id"]) if rx_map else {}) or {}
     return dict(id=r["id"], sender=r["sender"], body="" if dele else r["body"],
                 file=None if dele else r["file"], fname=r["fname"],
                 img=(not dele) and ext in IMG_EXT, ts=r["ts"], edited=bool(r["edited"]),
-                deleted=dele, name=r["name"], reply_to=r["reply_to"], rbody=r["rbody"], read=r["read_ts"] is not None)
+                deleted=dele, name=r["name"], reply_to=r["reply_to"], rbody=r["rbody"],
+                read=r["read_ts"] is not None, reactions=rx)
 
 
 MSG_SQL = """SELECT m.*, (SELECT username FROM users WHERE id=m.sender) AS name, (SELECT CASE WHEN r.deleted=1 THEN NULL
@@ -224,7 +246,8 @@ def messages():
         ids = [r[0] for r in d.execute("SELECT id FROM messages WHERE grp=?", (g_,))]
         d.execute("UPDATE gmembers SET last_read=? WHERE gid=? AND uid=?", (max(ids, default=0), g_, me()))
         d.commit()
-        return jsonify(msgs=[row_json(r) for r in rows], ids=ids, now=now - 1, typing=False)
+        rx_map = get_reactions_for_msgs([r["id"] for r in rows])
+        return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=False)
     d.execute("UPDATE messages SET read_ts=?, upd=? WHERE sender=? AND recipient=? AND read_ts IS NULL",
               (now, now, other, me()))
     d.commit()
@@ -233,7 +256,8 @@ def messages():
     t = d.execute("SELECT typing_to, typing_ts FROM users WHERE id=?", (other,)).fetchone()
     typing = bool(t and t["typing_to"] == me() and now - (t["typing_ts"] or 0) < 4)
     ids = [r[0] for r in d.execute("SELECT m.id FROM messages m WHERE " + PAIR, (me(), other, other, me()))]
-    return jsonify(msgs=[row_json(r) for r in rows], ids=ids, now=now - 1, typing=typing)
+    rx_map = get_reactions_for_msgs([r["id"] for r in rows])
+    return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=typing)
 
 
 @app.route("/api/send", methods=["POST"])
@@ -297,8 +321,34 @@ def kill_msg(r):
             os.remove(os.path.join(UPLOADS, r["file"]))
         except OSError:
             pass
+    db().execute("DELETE FROM reactions WHERE mid=?", (r["id"],))
     db().execute("UPDATE messages SET reply_to=NULL WHERE reply_to=?", (r["id"],))
     db().execute("DELETE FROM messages WHERE id=?", (r["id"],))
+
+
+@app.route("/api/react/<int:mid>", methods=["POST"])
+def react(mid):
+    need_login()
+    emoji = request.form.get("emoji", "").strip()[:10]
+    if not emoji:
+        abort(400)
+    d = db()
+    m = d.execute("SELECT * FROM messages WHERE id=?", (mid,)).fetchone()
+    if not m or m["deleted"]:
+        abort(404)
+    if m["grp"]:
+        gm(m["grp"])
+    elif m["sender"] != me() and m["recipient"] != me():
+        abort(403)
+    existing = d.execute("SELECT 1 FROM reactions WHERE mid=? AND uid=? AND emoji=?", (mid, me(), emoji)).fetchone()
+    if existing:
+        d.execute("DELETE FROM reactions WHERE mid=? AND uid=? AND emoji=?", (mid, me(), emoji))
+    else:
+        d.execute("INSERT OR REPLACE INTO reactions(mid, uid, emoji) VALUES(?,?,?)", (mid, me(), emoji))
+    now = time.time()
+    d.execute("UPDATE messages SET upd=? WHERE id=?", (now, mid))
+    d.commit()
+    return jsonify(ok=True)
 
 
 @app.route("/api/delete/<int:mid>", methods=["POST"])
@@ -334,7 +384,8 @@ def search():
     cond, args = ("m.grp=?", (g_,)) if g_ else (PAIR, (me(), other, other, me()))
     rows = db().execute(MSG_SQL + "WHERE m.body LIKE ? ESCAPE '\\' AND " + cond +
                         " ORDER BY m.id DESC LIMIT 50", (like,) + args).fetchall()
-    return jsonify([row_json(r) for r in rows])
+    rx_map = get_reactions_for_msgs([r["id"] for r in rows])
+    return jsonify([row_json(r, rx_map) for r in rows])
 
 
 @app.route("/api/admin/users")
