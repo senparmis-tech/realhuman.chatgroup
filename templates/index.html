@@ -2,7 +2,9 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>programiz</title>
+<title>Programiz</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<link rel="apple-touch-icon" href="/static/favicon.png">
 <style>
 :root{
   --bg:#FFFFFF;--fg:#1B1B1B;--mut:#6B7280;--side:#F8F9FA;
@@ -24,9 +26,15 @@ body{font:15px/1.5 "Inter","Segoe UI",system-ui,sans-serif;background:var(--bg);
 
 /* ─── Navbar ─── */
 .nav{background:var(--nav);color:var(--nav-fg);height:56px;flex:none;display:flex;align-items:center;padding:0 24px;gap:12px;font-weight:700;font-size:21px;letter-spacing:-.3px;border-bottom:1px solid var(--line);box-shadow:0 1px 3px var(--shadow)}
-.nav .lg{background:var(--acc);color:#fff;border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-family:"Fira Code",Consolas,monospace;font-size:16px;font-weight:700}
+.p-site-icon{width:30px;height:30px;border-radius:7px;object-fit:contain;vertical-align:middle;display:inline-block;flex-shrink:0}
 .space-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:12px;background:rgba(0,184,148,.12);color:var(--acc);border:1px solid rgba(0,184,148,.3);letter-spacing:.3px;text-transform:lowercase;cursor:pointer;transition:all .15s}
 .space-badge:hover{background:var(--acc);color:#fff}
+.credit-badge{margin-top:16px;font-size:12px;color:var(--mut);text-align:center}
+.credit-badge a{color:var(--acc);text-decoration:none;font-weight:600}
+.credit-badge a:hover{text-decoration:underline}
+.sidebar-credit{padding:10px 16px;font-size:11px;color:var(--mut);border-top:1px solid var(--line);text-align:center}
+.sidebar-credit a{color:var(--mut);text-decoration:none}
+.sidebar-credit a:hover{color:var(--acc);text-decoration:underline}
 .nav-right{margin-left:auto;display:flex;align-items:center;gap:14px}
 .nav small{font-weight:500;font-size:13px;color:var(--mut)}
 .theme-toggle{background:none;border:1px solid var(--line);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;padding:0;color:var(--fg);transition:all .2s}
@@ -247,7 +255,7 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 {% if user %}
 <div class="nav">
   <button class="side-toggle-btn" id="sideToggle" type="button" title="Toggle chats sidebar">☰</button>
-  <span class="lg">&gt;_</span>programiz
+  <img src="/static/favicon.png" alt="Programiz" class="p-site-icon">programiz
   {% if user.space %}<span class="space-badge" id="spaceSwitchBtn" title="Current space: {{ user.space }}. Click to switch">{{ user.space }} ⇄</span>{% endif %}
   <div class="nav-right">
     <small>{{ user.name }}</small>
@@ -257,7 +265,7 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 {% else %}
 <div class="nav landing-nav">
   <div class="p-logo">
-    <span class="p-brand-mark">P</span>
+    <img src="/static/favicon.png" alt="Programiz" class="p-site-icon">
     <span class="p-brand-text">Programiz</span>
   </div>
   <div class="p-nav-links">
@@ -310,6 +318,9 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
         <button type="submit" class="login-btn">Sign in / Create account</button>
         {% if error %}<div class="err">{{ error }}</div>{% endif %}
       </form>
+      <div class="credit-badge">
+        Icon &amp; design credit: <a href="https://www.programiz.com" target="_blank" rel="noopener">Programiz</a>
+      </div>
     </div>
 
     <div class="hero-right">
@@ -399,6 +410,9 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
       {% if user.rename or user.admin %}<span class="lnk" id="rn">✏️ Rename</span>{% endif %}
       {% if user.admin %}<span class="lnk" id="ng">➕ New group</span><span class="lnk" id="na">➕ New account</span><span class="lnk" id="adm">⚙️ Accounts</span>{% endif %}
       <span class="lnk" id="delMe" style="color:#ef4444">🗑️ Delete account</span>
+    </div>
+    <div class="sidebar-credit">
+      Icon &amp; design credit: <a href="https://www.programiz.com" target="_blank" rel="noopener">Programiz</a>
     </div>
   </div>
   <div class="main hide" id="main">

@@ -599,5 +599,10 @@ def files(name):
                                download_name=r["fname"])
 
 
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory("static", "favicon.png", mimetype="image/png")
+
+
 if __name__ == "__main__":
     app.run(debug=False)
