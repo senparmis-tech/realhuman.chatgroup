@@ -221,7 +221,7 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
     <div class="side-actions">
       <span class="lnk" id="nb">🔔 Notifications</span>
       {% if user.rename or user.admin %}<span class="lnk" id="rn">✏️ Rename</span>{% endif %}
-      {% if user.admin %}<span class="lnk" id="ng">➕ New group</span><span class="lnk" id="adm">⚙️ Accounts</span>{% endif %}
+      {% if user.admin %}<span class="lnk" id="ng">➕ New group</span><span class="lnk" id="na">➕ New account</span><span class="lnk" id="adm">⚙️ Accounts</span>{% endif %}
       <span class="lnk" id="delMe" style="color:#ef4444">🗑️ Delete account</span>
     </div>
   </div>
@@ -632,17 +632,86 @@ $("ng").onclick=async()=>{const n=prompt("Group name");if(!n||!n.trim())return;
   await loadGroups();openG({id:r.id,name:n.trim().slice(0,40)});$("mg").onclick()};
 $("adm").onclick=async function acc(){
   const us=await (await fetch("/api/admin/users")).json(), ov=$("ov");
-  show(true);ov.innerHTML="<h3>Accounts</h3>";ov.style.display="block";
-  const set=async(id,f,v)=>{const r=await fetch(`/api/admin/set/${id}`,{method:"POST",body:new URLSearchParams({field:f,value:v})});if(!r.ok)alert(r.status===409?"Name already taken":r.status===400?"Need at least one admin":"Not allowed");acc();loadUsers()};
+  show(true);ov.innerHTML="";ov.style.display="block";
+
+  const topBar = document.createElement("div");
+  topBar.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:14px";
+  const h = document.createElement("h3");
+  h.style.margin = "0";
+  h.textContent = "Accounts Management";
+  topBar.appendChild(h);
+  topBar.appendChild(mk("✕ Close", () => { ov.style.display = "none"; }));
+  ov.appendChild(topBar);
+
+  const formBox = document.createElement("div");
+  formBox.style.cssText = "background:var(--them);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px";
+  formBox.innerHTML = `
+    <div style="font-weight:600;font-size:14px;margin-bottom:10px;color:var(--fg)">➕ Create New Account</div>
+    <form id="createAccForm" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <input id="newAccUser" placeholder="Username" required style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;width:150px">
+      <input id="newAccPw" type="password" placeholder="Password (4+ chars)" required style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;width:170px">
+      <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;color:var(--fg);user-select:none">
+        <input id="newAccAdmin" type="checkbox"> Admin
+      </label>
+      <button type="submit" style="padding:8px 18px;border-radius:8px;font-size:13px;background:var(--acc);color:#fff;border:none;cursor:pointer;font-weight:600">Create</button>
+      <span id="createAccErr" style="color:#ef4444;font-size:12px;display:none;margin-left:6px"></span>
+    </form>
+  `;
+  ov.appendChild(formBox);
+
+  $("createAccForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const u = $("newAccUser").value.trim();
+    const p = $("newAccPw").value;
+    const isAdm = $("newAccAdmin").checked ? "1" : "0";
+    const err = $("createAccErr");
+    err.style.display = "none";
+    if(!u || p.length < 4){
+      err.textContent = "Username & 4+ char password required";
+      err.style.display = "inline";
+      return;
+    }
+    const res = await fetch("/api/admin/create_user", {
+      method: "POST",
+      body: new URLSearchParams({username: u, password: p, is_admin: isAdm})
+    });
+    const data = await res.json();
+    if(!res.ok){
+      err.textContent = data.error || "Failed to create account";
+      err.style.display = "inline";
+      return;
+    }
+    acc();
+    loadUsers();
+  };
+
+  const listHeader = document.createElement("div");
+  listHeader.className = "section-label";
+  listHeader.style.padding = "4px 0 10px 0";
+  listHeader.textContent = `All Users (${us.length})`;
+  ov.appendChild(listHeader);
+
+  const set=async(id,f,v)=>{const r=await fetch(`/api/admin/set/${id}`,{method:"POST",body:new URLSearchParams({field:f,value:v})});if(!r.ok)alert(r.status===409?"Name already taken":r.status===400?"Invalid value / Need at least one admin":"Not allowed");acc();loadUsers()};
   us.forEach(u=>{const d=document.createElement("div");d.className="r";d.style.cursor="default";
     d.append(u.username+(u.is_admin?" (admin)":"")+"  ");
     d.appendChild(mk("Rename",()=>{const n=prompt("New name",u.username);if(n&&n.trim())set(u.id,"name",n)}));
+    d.append(" ");
+    d.appendChild(mk("Reset Password",()=>{const p=prompt("New password for "+u.username);if(p&&p.length>=4)set(u.id,"pw",p);else if(p)alert("Password must be at least 4 characters")}));
     [["is_admin","Admin"],["can_rename","Can rename"],["can_upload","Can upload"],["can_unsend","Can unsend"]].forEach(([f,l])=>{
       d.append(" ");d.appendChild(mk(l+": "+(u[f]?"ON":"OFF"),()=>set(u.id,f,u[f]?"0":"1")))});
     if(u.id!==ME){d.append(" ");d.appendChild(mk("Delete",async()=>{if(confirm("Delete "+u.username+" and all their messages?")){await fetch("/api/admin/delete_user/"+u.id,{method:"POST"});acc();loadUsers()}}))}
     ov.appendChild(d)});
-  ov.appendChild(mk("Close",()=>{ov.style.display="none"}));
+  const foot = document.createElement("div");
+  foot.style.marginTop = "14px";
+  foot.appendChild(mk("Close",()=>{ov.style.display="none"}));
+  ov.appendChild(foot);
 };
+if($("na")){
+  $("na").onclick = async () => {
+    await $("adm").onclick();
+    setTimeout(() => { if($("newAccUser")) $("newAccUser").focus(); }, 50);
+  };
+}
 {% endif %}
 {% if user.rename or user.admin %}
 $("rn").onclick=async()=>{const n=prompt("New username");if(!n||!n.trim())return;

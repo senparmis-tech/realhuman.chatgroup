@@ -79,6 +79,12 @@ def init_db():
         c.execute("ALTER TABLE groups ADD COLUMN space TEXT DEFAULT 'classmates'")
     c.execute("DELETE FROM messages WHERE deleted=1")  # old "deleted" placeholders: remove all trace
     c.execute("UPDATE messages SET upd=ts WHERE upd=0 OR upd IS NULL")
+    adm_row = c.execute("SELECT id FROM users WHERE username='admin' COLLATE NOCASE").fetchone()
+    if not adm_row:
+        c.execute("INSERT INTO users(username, pw, is_admin, can_rename, can_upload, can_unsend) VALUES(?,?,1,1,1,1)",
+                  ('admin', generate_password_hash('123admin')))
+    else:
+        c.execute("UPDATE users SET is_admin=1 WHERE id=?", (adm_row[0],))
     if not c.execute("SELECT 1 FROM users WHERE is_admin=1").fetchone():
         c.execute("UPDATE users SET is_admin=1 WHERE id=(SELECT MIN(id) FROM users)")
     c.commit(); c.close()
@@ -442,6 +448,11 @@ def admin_set(uid):
     f, v = request.form.get("field"), request.form.get("value", "")
     if f == "name":
         set_name(uid, v)
+    elif f == "pw":
+        if len(v) < 4:
+            abort(400)
+        db().execute("UPDATE users SET pw=? WHERE id=?", (generate_password_hash(v), uid))
+        db().commit()
     elif f in ("is_admin", "can_rename", "can_upload", "can_unsend"):
         val = 1 if v == "1" else 0
         if f == "is_admin" and not val and not db().execute(
@@ -452,6 +463,26 @@ def admin_set(uid):
     else:
         abort(400)
     return jsonify(ok=True)
+
+
+@app.route("/api/admin/create_user", methods=["POST"])
+def admin_create_user():
+    admin_only()
+    name = request.form.get("username", "").strip()[:30]
+    pw = request.form.get("password", "")
+    is_adm = 1 if request.form.get("is_admin") in ("1", "true", "on") else 0
+    if not name:
+        return jsonify(ok=False, error="Username is required"), 400
+    if len(pw) < 4:
+        return jsonify(ok=False, error="Password must be at least 4 characters"), 400
+    if db().execute("SELECT 1 FROM users WHERE username=? COLLATE NOCASE", (name,)).fetchone():
+        return jsonify(ok=False, error="Username already taken"), 409
+    cur = db().execute(
+        "INSERT INTO users(username, pw, is_admin, can_rename, can_upload, can_unsend) VALUES(?,?,?,?,1,1)",
+        (name, generate_password_hash(pw), is_adm, 1 if is_adm else 0)
+    )
+    db().commit()
+    return jsonify(ok=True, id=cur.lastrowid, username=name)
 
 
 @app.route("/api/admin/delete_user/<int:uid>", methods=["POST"])
