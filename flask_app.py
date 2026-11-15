@@ -88,8 +88,6 @@ def init_db():
                   ('admin', generate_password_hash('123admin')))
     else:
         c.execute("UPDATE users SET is_admin=1 WHERE id=?", (adm_row[0],))
-    if not c.execute("SELECT 1 FROM users WHERE is_admin=1").fetchone():
-        c.execute("UPDATE users SET is_admin=1 WHERE id=(SELECT MIN(id) FROM users)")
     c.commit(); c.close()
 
 
@@ -173,7 +171,7 @@ def index():
     if not r:
         session.clear()
         return redirect("/")
-    return render_template("index.html", user={"id": me(), "name": r["username"], "admin": is_admin(), "rename": can("can_rename"), "space": current_space()})
+    return render_template("index.html", user={"id": me(), "name": r["username"], "admin": is_admin(), "rename": can("can_rename"), "space": current_space() if is_admin() else None})
 
 
 @app.route("/auth", methods=["POST"])
@@ -192,7 +190,7 @@ def auth():
         if not check_password_hash(row["pw"], pw):
             bad = "Invalid username or password"
         elif invite and invite not in VALID_SPACES:
-            bad = "Invalid code. Use 'classmates' or 'realhuman'"
+            bad = "Invalid invite code"
         else:
             # Existing users: admins can use invite code to pick space; regular users always get their DB space
             if row["is_admin"] and invite in VALID_SPACES:
@@ -200,9 +198,8 @@ def auth():
             else:
                 target_space = row["space"] if row["space"] in VALID_SPACES else DEFAULT_SPACE
     elif invite in VALID_SPACES:
-        first = not db().execute("SELECT 1 FROM users").fetchone()
-        cur = db().execute("INSERT INTO users(username,pw,is_admin,space) VALUES(?,?,?,?)",
-                           (name, generate_password_hash(pw), 1 if first else 0, invite))
+        cur = db().execute("INSERT INTO users(username,pw,is_admin,space) VALUES(?,?,0,?)",
+                           (name, generate_password_hash(pw), invite))
         db().commit()
         row = db().execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone()
         target_space = invite

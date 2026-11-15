@@ -639,7 +639,7 @@ async function loadUsers(){
     box.appendChild(row(av(u.username,u.online),u.username,n,here,()=>open(u),delFn));
   });
   first=false; title();
-  if(!us.length) box.innerHTML='<div class="hint" style="padding:16px">No one else yet. Share the site link and invite code!</div>';
+  if(!us.length) box.innerHTML='<div class="hint" style="padding:16px">No other users in this chat yet.</div>';
 }
 async function loadGroups(){
   let resp; try{resp=await fetch("/api/groups")}catch(e){return}
@@ -1063,6 +1063,7 @@ if($("delMe")){
     }
   };
 }
+{% if user.admin %}
 const switchSpaceFn = async () => {
   const curSp = "{{ user.space }}";
   const nextSp = curSp === "classmates" ? "realhuman" : "classmates";
@@ -1072,6 +1073,7 @@ const switchSpaceFn = async () => {
 };
 if($("spaceSwitchBtn")) $("spaceSwitchBtn").onclick = switchSpaceFn;
 if($("sideSpaceSwitch")) $("sideSpaceSwitch").onclick = switchSpaceFn;
+{% endif %}
 loadUsers();loadGroups(); setInterval(poll,2000); setInterval(()=>{loadUsers();loadGroups()},5000);
 if(!mobile())$("main").classList.remove("hide");
 </script>
