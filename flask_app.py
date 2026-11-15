@@ -9,7 +9,9 @@ DB = os.path.join(BASE, "chat.db")
 UPLOADS = os.path.join(BASE, "uploads")
 os.makedirs(UPLOADS, exist_ok=True)
 
-INVITE_CODE = os.environ.get("INVITE_CODE", "classmates")  # change me!
+VALID_SPACES = {"classmates", "realhuman"}
+DEFAULT_SPACE = "classmates"
+INVITE_CODE = os.environ.get("INVITE_CODE", "classmates")
 IMG_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
@@ -69,9 +71,12 @@ def init_db():
         if col not in cols("users"):
             c.execute(f"ALTER TABLE users ADD COLUMN {col} {typ}")
     for col, typ in [("edited", "INTEGER DEFAULT 0"), ("deleted", "INTEGER DEFAULT 0"),
-                     ("reply_to", "INTEGER"), ("grp", "INTEGER"), ("read_ts", "REAL"), ("upd", "REAL DEFAULT 0")]:
+                     ("reply_to", "INTEGER"), ("grp", "INTEGER"), ("read_ts", "REAL"), ("upd", "REAL DEFAULT 0"),
+                     ("space", "TEXT DEFAULT 'classmates'")]:
         if col not in cols("messages"):
             c.execute(f"ALTER TABLE messages ADD COLUMN {col} {typ}")
+    if "space" not in cols("groups"):
+        c.execute("ALTER TABLE groups ADD COLUMN space TEXT DEFAULT 'classmates'")
     c.execute("DELETE FROM messages WHERE deleted=1")  # old "deleted" placeholders: remove all trace
     c.execute("UPDATE messages SET upd=ts WHERE upd=0 OR upd IS NULL")
     if not c.execute("SELECT 1 FROM users WHERE is_admin=1").fetchone():
@@ -84,6 +89,10 @@ init_db()
 
 def me():
     return session.get("uid")
+
+
+def current_space():
+    return session.get("space", DEFAULT_SPACE)
 
 
 def need_login():
@@ -147,7 +156,7 @@ def index():
     if not r:
         session.clear()
         return redirect("/")
-    return render_template("index.html", user={"id": me(), "name": r["username"], "admin": is_admin(), "rename": can("can_rename")})
+    return render_template("index.html", user={"id": me(), "name": r["username"], "admin": is_admin(), "rename": can("can_rename"), "space": current_space()})
 
 
 @app.route("/auth", methods=["POST"])
@@ -156,15 +165,19 @@ def auth():
         return redirect("/?e=Too many attempts, try again in 10 minutes")
     name = request.form.get("username", "").strip()[:30]
     pw = request.form.get("password", "")
+    invite = request.form.get("invite", "").strip().lower()
     if not name or len(pw) < 4:
         return redirect("/?e=Enter a username and a password (4+ characters)")
     row = db().execute("SELECT * FROM users WHERE username=? COLLATE NOCASE", (name,)).fetchone()
     bad = None
+    target_space = invite if invite in VALID_SPACES else DEFAULT_SPACE
     if row:
         if not check_password_hash(row["pw"], pw):
             bad = "Wrong password"
-    elif request.form.get("invite", "") != INVITE_CODE:
-        bad = "New account needs the correct invite code"
+        elif invite and invite not in VALID_SPACES:
+            bad = "Invalid code. Use 'classmates' or 'realhuman'"
+    elif invite not in VALID_SPACES:
+        bad = "New account needs invite code: 'classmates' or 'realhuman'"
     else:
         first = not db().execute("SELECT 1 FROM users").fetchone()
         cur = db().execute("INSERT INTO users(username,pw,is_admin) VALUES(?,?,?)",
@@ -178,6 +191,7 @@ def auth():
     session.clear()
     session.permanent = True
     session["uid"] = row["id"]
+    session["space"] = target_space
     return redirect("/")
 
 
@@ -191,10 +205,11 @@ def logout():
 def users():
     need_login()
     now = time.time()
+    sp = current_space()
     rows = db().execute("""
       SELECT u.id, u.username, u.last_seen,
-        (SELECT COUNT(*) FROM messages WHERE sender=u.id AND recipient=? AND read_ts IS NULL AND deleted=0) AS unread
-      FROM users u WHERE u.id<>? ORDER BY u.username""", (me(), me())).fetchall()
+        (SELECT COUNT(*) FROM messages WHERE sender=u.id AND recipient=? AND read_ts IS NULL AND deleted=0 AND (space=? OR space IS NULL)) AS unread
+      FROM users u WHERE u.id<>? ORDER BY u.username""", (me(), sp, me())).fetchall()
     return jsonify([dict(id=r["id"], username=r["username"], unread=r["unread"],
                          online=now - (r["last_seen"] or 0) < 15) for r in rows])
 
@@ -243,23 +258,24 @@ def messages():
     since = float(request.args.get("since", 0))
     now = time.time()
     d = db()
+    sp = current_space()
     g_ = request.args.get("g", type=int)
     if g_:
         gm(g_)
-        rows = d.execute(MSG_SQL + "WHERE (m.id>? OR m.upd>?) AND m.grp=? ORDER BY m.id", (after, since, g_)).fetchall()
-        ids = [r[0] for r in d.execute("SELECT id FROM messages WHERE grp=?", (g_,))]
+        rows = d.execute(MSG_SQL + "WHERE (m.id>? OR m.upd>?) AND m.grp=? AND (m.space=? OR m.space IS NULL) ORDER BY m.id", (after, since, g_, sp)).fetchall()
+        ids = [r[0] for r in d.execute("SELECT id FROM messages WHERE grp=? AND (space=? OR space IS NULL)", (g_, sp))]
         d.execute("UPDATE gmembers SET last_read=? WHERE gid=? AND uid=?", (max(ids, default=0), g_, me()))
         d.commit()
         rx_map = get_reactions_for_msgs([r["id"] for r in rows])
         return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=False)
-    d.execute("UPDATE messages SET read_ts=?, upd=? WHERE sender=? AND recipient=? AND read_ts IS NULL",
-              (now, now, other, me()))
+    d.execute("UPDATE messages SET read_ts=?, upd=? WHERE sender=? AND recipient=? AND read_ts IS NULL AND (space=? OR space IS NULL)",
+              (now, now, other, me(), sp))
     d.commit()
-    rows = d.execute(MSG_SQL + "WHERE (m.id>? OR m.upd>?) AND " + PAIR + " ORDER BY m.id",
-                     (after, since, me(), other, other, me())).fetchall()
+    rows = d.execute(MSG_SQL + "WHERE (m.id>? OR m.upd>?) AND " + PAIR + " AND (m.space=? OR m.space IS NULL) ORDER BY m.id",
+                     (after, since, me(), other, other, me(), sp)).fetchall()
     t = d.execute("SELECT typing_to, typing_ts FROM users WHERE id=?", (other,)).fetchone()
     typing = bool(t and t["typing_to"] == me() and now - (t["typing_ts"] or 0) < 4)
-    ids = [r[0] for r in d.execute("SELECT m.id FROM messages m WHERE " + PAIR, (me(), other, other, me()))]
+    ids = [r[0] for r in d.execute("SELECT m.id FROM messages m WHERE " + PAIR + " AND (m.space=? OR m.space IS NULL)", (me(), other, other, me(), sp))]
     rx_map = get_reactions_for_msgs([r["id"] for r in rows])
     return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=typing)
 
@@ -293,8 +309,9 @@ def send():
     if not body and not stored:
         abort(400)
     now = time.time()
-    db().execute("""INSERT INTO messages(sender,recipient,body,file,fname,mime,ts,upd,reply_to,grp)
-                    VALUES(?,?,?,?,?,?,?,?,?,?)""", (me(), other, body, stored, fname, mime, now, now, reply, g_))
+    sp = current_space()
+    db().execute("""INSERT INTO messages(sender,recipient,body,file,fname,mime,ts,upd,reply_to,grp,space)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?)""", (me(), other, body, stored, fname, mime, now, now, reply, g_, sp))
     db().execute("UPDATE users SET typing_to=NULL WHERE id=?", (me(),))
     db().commit()
     return jsonify(ok=True)
@@ -395,7 +412,8 @@ def search():
     if not q:
         return jsonify([])
     like = "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
-    cond, args = ("m.grp=?", (g_,)) if g_ else (PAIR, (me(), other, other, me()))
+    sp = current_space()
+    cond, args = ("m.grp=? AND (m.space=? OR m.space IS NULL)", (g_, sp)) if g_ else (PAIR + " AND (m.space=? OR m.space IS NULL)", (me(), other, other, me(), sp))
     rows = db().execute(MSG_SQL + "WHERE m.body LIKE ? ESCAPE '\\' AND " + cond +
                         " ORDER BY m.id DESC LIMIT 50", (like,) + args).fetchall()
     rx_map = get_reactions_for_msgs([r["id"] for r in rows])
@@ -471,9 +489,10 @@ def delete_account():
 @app.route("/api/groups")
 def groups():
     need_login()
+    sp = current_space()
     rows = db().execute("""SELECT g.id, g.name,
-      (SELECT COUNT(*) FROM messages m WHERE m.grp=g.id AND m.id>x.last_read AND m.sender<>?) AS unread
-      FROM groups g JOIN gmembers x ON x.gid=g.id WHERE x.uid=? ORDER BY g.name""", (me(), me())).fetchall()
+      (SELECT COUNT(*) FROM messages m WHERE m.grp=g.id AND m.id>x.last_read AND m.sender<>? AND (m.space=? OR m.space IS NULL)) AS unread
+      FROM groups g JOIN gmembers x ON x.gid=g.id WHERE x.uid=? AND (g.space=? OR g.space IS NULL) ORDER BY g.name""", (me(), sp, me(), sp)).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -483,7 +502,8 @@ def group_create():
     name = request.form.get("name", "").strip()[:40]
     if not name:
         abort(400)
-    cur = db().execute("INSERT INTO groups(name) VALUES(?)", (name,))
+    sp = current_space()
+    cur = db().execute("INSERT INTO groups(name, space) VALUES(?,?)", (name, sp))
     db().execute("INSERT INTO gmembers(gid,uid) VALUES(?,?)", (cur.lastrowid, me()))
     db().commit()
     return jsonify(id=cur.lastrowid)

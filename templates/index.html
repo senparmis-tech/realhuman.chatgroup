@@ -25,6 +25,7 @@ body{font:15px/1.5 "Inter","Segoe UI",system-ui,sans-serif;background:var(--bg);
 /* ─── Navbar ─── */
 .nav{background:var(--nav);color:var(--nav-fg);height:56px;flex:none;display:flex;align-items:center;padding:0 24px;gap:12px;font-weight:700;font-size:21px;letter-spacing:-.3px;border-bottom:1px solid var(--line);box-shadow:0 1px 3px var(--shadow)}
 .nav .lg{background:var(--acc);color:#fff;border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-family:"Fira Code",Consolas,monospace;font-size:16px;font-weight:700}
+.space-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:12px;background:rgba(0,184,148,.12);color:var(--acc);border:1px solid rgba(0,184,148,.3);letter-spacing:.3px;text-transform:lowercase}
 .nav-right{margin-left:auto;display:flex;align-items:center;gap:14px}
 .nav small{font-weight:500;font-size:13px;color:var(--mut)}
 .theme-toggle{background:none;border:1px solid var(--line);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;padding:0;color:var(--fg);transition:all .2s}
@@ -167,6 +168,7 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 <div class="nav">
   {% if user %}<button class="side-toggle-btn" id="sideToggle" type="button" title="Toggle chats sidebar">☰</button>{% endif %}
   <span class="lg">&gt;_</span>programiz
+  {% if user and user.space %}<span class="space-badge">{{ user.space }}</span>{% endif %}
   <div class="nav-right">
     {% if user %}<small>{{ user.name }}</small>{% endif %}
     <button class="theme-toggle" id="themeToggle" type="button" title="Toggle dark/light mode">☀️</button>
@@ -197,10 +199,10 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
   <p class="hint" style="margin-top:0">Sign in or create a new account</p>
   <input name="username" placeholder="Username" required autocomplete="username">
   <input name="password" type="password" placeholder="Password" required autocomplete="current-password">
-  <input name="invite" placeholder="Invite code (new accounts only)" autocomplete="off">
+  <input name="invite" placeholder="Invite code: classmates or realhuman" autocomplete="off">
   <button style="width:100%;margin-top:12px;padding:13px;border-radius:12px;font-size:15px">Sign in / Create account</button>
   {% if error %}<div class="err">{{ error }}</div>{% endif %}
-  <p class="hint">New here? Pick a username and password plus the invite code. Returning? Leave the code blank.</p>
+  <p class="hint">Use code <b>classmates</b> or <b>realhuman</b> to choose your chat space. Both spaces share your user account, but have separate chat histories!</p>
 </form>
 {% else %}
 <div class="app">
