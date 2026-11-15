@@ -179,17 +179,17 @@ def auth():
     target_space = invite if invite in VALID_SPACES else DEFAULT_SPACE
     if row:
         if not check_password_hash(row["pw"], pw):
-            bad = "Wrong password"
+            bad = "Invalid username or password"
         elif invite and invite not in VALID_SPACES:
             bad = "Invalid code. Use 'classmates' or 'realhuman'"
-    elif invite not in VALID_SPACES:
-        bad = "New account needs invite code: 'classmates' or 'realhuman'"
-    else:
+    elif invite in VALID_SPACES:
         first = not db().execute("SELECT 1 FROM users").fetchone()
         cur = db().execute("INSERT INTO users(username,pw,is_admin) VALUES(?,?,?)",
                            (name, generate_password_hash(pw), 1 if first else 0))
         db().commit()
         row = db().execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone()
+    else:
+        bad = "Invalid username or password"
     if bad:
         n, t = fails.get(request.remote_addr, (0, time.time()))
         fails[request.remote_addr] = (n + 1, t)
@@ -205,6 +205,16 @@ def auth():
 def logout():
     session.clear()
     return redirect("/")
+
+
+@app.route("/api/space/<name>", methods=["POST"])
+def switch_space(name):
+    need_login()
+    name = name.lower()
+    if name in VALID_SPACES:
+        session["space"] = name
+        return jsonify(ok=True, space=name)
+    abort(400)
 
 
 @app.route("/api/users")
