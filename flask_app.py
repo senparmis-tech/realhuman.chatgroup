@@ -89,6 +89,10 @@ def me():
 def need_login():
     if not me():
         abort(401)
+    r = db().execute("SELECT 1 FROM users WHERE id=?", (me(),)).fetchone()
+    if not r:
+        session.clear()
+        abort(401)
     db().execute("UPDATE users SET last_seen=? WHERE id=?", (time.time(), me()))
     db().commit()
 
@@ -444,6 +448,23 @@ def admin_delete_user(uid):
     db().execute("DELETE FROM gmembers WHERE uid=?", (uid,))
     db().execute("DELETE FROM users WHERE id=?", (uid,))
     db().commit()
+    return jsonify(ok=True)
+
+
+@app.route("/api/delete_account", methods=["POST"])
+def delete_account():
+    need_login()
+    uid = me()
+    if is_admin() and not db().execute("SELECT 1 FROM users WHERE is_admin=1 AND id<>?", (uid,)).fetchone():
+        abort(400)
+    for r in db().execute("SELECT * FROM messages WHERE (sender=? OR recipient=?) AND file IS NOT NULL",
+                          (uid, uid)).fetchall():
+        kill_msg(r)
+    db().execute("DELETE FROM messages WHERE sender=? OR recipient=?", (uid, uid))
+    db().execute("DELETE FROM gmembers WHERE uid=?", (uid,))
+    db().execute("DELETE FROM users WHERE id=?", (uid,))
+    db().commit()
+    session.clear()
     return jsonify(ok=True)
 
 

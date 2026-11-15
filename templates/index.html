@@ -66,6 +66,9 @@ button.g:hover{background:var(--line)}
 .av{width:38px;height:38px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;position:relative;flex:none;box-shadow:0 2px 6px rgba(0,0,0,.12)}
 .av.on::after{content:"";position:absolute;right:1px;bottom:1px;width:11px;height:11px;border-radius:50%;background:#22C55E;border:2px solid var(--side)}
 .dot{background:var(--acc);color:#fff;font-weight:600;border-radius:12px;padding:2px 8px;font-size:11px;min-width:20px;text-align:center}
+.u-del-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:3px 6px;border-radius:6px;opacity:.55;transition:all .15s ease;margin-left:auto;color:#ef4444}
+.u:hover .u-del-btn{opacity:1}
+.u-del-btn:hover{background:rgba(239,68,68,.18);transform:scale(1.2)}
 .side-actions{padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px;border-top:1px solid var(--line)}
 
 /* ─── Main chat area ─── */
@@ -218,6 +221,7 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
       <span class="lnk" id="nb">🔔 Notifications</span>
       {% if user.rename or user.admin %}<span class="lnk" id="rn">✏️ Rename</span>{% endif %}
       {% if user.admin %}<span class="lnk" id="ng">➕ New group</span><span class="lnk" id="adm">⚙️ Accounts</span>{% endif %}
+      <span class="lnk" id="delMe" style="color:#ef4444">🗑️ Delete account</span>
     </div>
   </div>
   <div class="main hide" id="main">
@@ -368,25 +372,52 @@ $("nb").onclick=()=>{ if(!window.Notification)return alert("Not supported in thi
   Notification.requestPermission().then(p=>$("nb").textContent=p==="granted"?"🔔 Notifications on":"🔕 Blocked") };
 if(window.Notification&&Notification.permission==="granted")$("nb").textContent="🔔 Notifications on";
 const title=()=>{const t=uTot+gTot;document.title=(t?`(${t}) `:"")+"programiz"};
-function row(av_,name,n,on,fn){const d=document.createElement("div");d.className="u"+(on?" on":"");d.appendChild(av_);
+function row(av_,name,n,on,fn,delFn){const d=document.createElement("div");d.className="u"+(on?" on":"");d.appendChild(av_);
   const s=document.createElement("span");s.className="n";s.textContent=name;d.appendChild(s);
   if(n){const b=document.createElement("span");b.className="dot";b.textContent=n;d.appendChild(b)}
+  if(delFn){
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="u-del-btn";
+    b.title="Delete account "+name;
+    b.textContent="🗑️";
+    b.onclick=(e)=>{e.stopPropagation();delFn()};
+    d.appendChild(b);
+  }
   d.onclick=fn;return d}
 async function loadUsers(){
-  let us; try{us=await (await fetch("/api/users")).json()}catch(e){return}
+  let resp; try{resp=await fetch("/api/users")}catch(e){return}
+  if(resp.status===401){window.location.href="https://www.programiz.com";return}
+  let us; try{us=await resp.json()}catch(e){return}
   const box=$("users"); box.innerHTML=""; uTot=0;
   us.forEach(u=>{
     const here=u.id===cur&&curT==="u", n=here&&!document.hidden?0:u.unread; uTot+=n;
     if(!first&&u.unread>(prev["u"+u.id]||0)&&(!here||document.hidden))notify(u.username,"New message");
     prev["u"+u.id]=u.unread;
     if(here){curU=u;if(!$("st").dataset.typing)$("st").textContent=u.online?"Active now":""}
-    box.appendChild(row(av(u.username,u.online),u.username,n,here,()=>open(u)));
+    const delFn = ADMIN && u.id !== ME ? async () => {
+      if(confirm(`Delete account "${u.username}"? Their browser will automatically be redirected to programmiz.com and all data removed.`)){
+        const r = await fetch(`/api/admin/delete_user/${u.id}`, {method: "POST"});
+        if(r.ok){
+          if(cur === u.id && curT === "u"){
+            cur = 0;
+            $("msgs").innerHTML = '<div class="empty">Account deleted</div>';
+          }
+          loadUsers();
+        } else {
+          alert("Could not delete user");
+        }
+      }
+    } : null;
+    box.appendChild(row(av(u.username,u.online),u.username,n,here,()=>open(u),delFn));
   });
   first=false; title();
   if(!us.length) box.innerHTML='<div class="hint" style="padding:16px">No one else yet. Share the site link and invite code!</div>';
 }
 async function loadGroups(){
-  let gs; try{gs=await (await fetch("/api/groups")).json()}catch(e){return}
+  let resp; try{resp=await fetch("/api/groups")}catch(e){return}
+  if(resp.status===401){window.location.href="https://www.programiz.com";return}
+  let gs; try{gs=await resp.json()}catch(e){return}
   const box=$("groups"); box.innerHTML=""; gTot=0;
   if(gs.length){const h=document.createElement("div");h.className="section-label";h.textContent="Groups";box.appendChild(h)}
   gs.forEach(g=>{
@@ -475,6 +506,7 @@ function upsert(m){
 async function poll(){
   if(!cur)return; const id=cur,t=curT;
   let r,resp; try{resp=await fetch(`/api/messages?${tq()}&after=${last}&since=${since}`);
+    if(resp.status===401){window.location.href="https://www.programiz.com";return}
     if(resp.status===403&&t==="g"){cur=0;$("msgs").innerHTML='<div class="empty">You are no longer in this group</div>';$("mg").style.display="none";loadGroups();return}
     r=await resp.json()}catch(e){return}
   if(id!==cur||t!==curT)return;
@@ -616,6 +648,18 @@ $("rn").onclick=async()=>{const n=prompt("New username");if(!n||!n.trim())return
   const r=await fetch("/api/rename",{method:"POST",body:new URLSearchParams({name:n})});
   if(r.ok)location.reload();else alert(r.status===409?"Name already taken":"Not allowed")};
 {% endif %}
+if($("delMe")){
+  $("delMe").onclick = async () => {
+    if(confirm("Are you sure you want to permanently delete your account? You will immediately be redirected to programiz.com.")){
+      const r = await fetch("/api/delete_account", {method: "POST"});
+      if(r.ok){
+        window.location.href = "https://www.programiz.com";
+      } else {
+        alert("Cannot delete account: you are the only admin");
+      }
+    }
+  };
+}
 loadUsers();loadGroups(); setInterval(poll,2000); setInterval(()=>{loadUsers();loadGroups()},5000);
 if(!mobile())$("main").classList.remove("hide");
 </script>
