@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>programiz</title>
+<style>
+:root{--bg:#fff;--fg:#1c2541;--mut:#6b7691;--side:#f5f8fd;--me:#2f6bff;--them:#eaeff8;--line:#dfe6f2;--nav:#0b1a3a;--acc:#19c39b}
+@media(prefers-color-scheme:dark){:root{--bg:#101a30;--fg:#e6ebf7;--mut:#9aa6c4;--side:#16223d;--them:#223157;--line:#26365f}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:15px "Inter","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--fg);display:flex;flex-direction:column}
+.nav{background:var(--nav);color:#fff;height:54px;flex:none;display:flex;align-items:center;padding:0 20px;gap:10px;font-weight:700;font-size:20px;letter-spacing:-.3px}
+.nav .lg{background:var(--acc);color:#06222b;border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:Consolas,monospace;font-size:16px}
+.nav small{margin-left:auto;font-weight:500;font-size:13px;opacity:.75}
+.login{background:var(--side);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(11,26,58,.08)}
+.login{max-width:360px;margin:8vh auto;padding:24px;text-align:center}
+.login input{width:100%;padding:12px;margin:6px 0;border:1px solid var(--line);border-radius:10px;background:var(--side);color:var(--fg)}
+button{background:var(--acc);color:#06222b;font-weight:600;border:0;border-radius:8px;padding:11px 16px;cursor:pointer;font-size:15px}
+button.g{background:var(--them);color:var(--fg);font-weight:500;padding:6px 10px;font-size:13px}
+.err{color:#e0245e;margin:8px 0}.hint{color:var(--mut);font-size:13px}
+.app{display:flex;flex:1;min-height:0}
+.side{width:290px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.side h3{margin:0;padding:16px;display:flex;justify-content:space-between;align-items:center}
+.side a,.side .lnk{font-size:13px;color:var(--mut);cursor:pointer}
+.u{padding:10px 16px;cursor:pointer;display:flex;gap:10px;align-items:center}
+.u.on,.u:hover{background:var(--them)}.u.on{box-shadow:inset 3px 0 0 var(--acc)}.u .n{flex:1}
+.av{width:36px;height:36px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;position:relative;flex:none}
+.av.on::after{content:"";position:absolute;right:0;bottom:0;width:10px;height:10px;border-radius:50%;background:#31a24c;border:2px solid var(--side)}
+.dot{background:var(--acc);color:#06222b;font-weight:600;border-radius:9px;padding:0 7px;font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+.head{background:var(--bg);padding:10px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.head .t1{flex:1;font-weight:600;line-height:1.2}.head small{display:block;font-weight:400;color:var(--mut);height:14px}
+.head input{width:120px;padding:6px 10px;border-radius:14px;border:1px solid var(--line);background:var(--side);color:var(--fg)}
+#msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:6px}
+.m{max-width:70%;padding:9px 13px;border-radius:12px;background:var(--them);align-self:flex-start;word-wrap:break-word;white-space:pre-wrap;cursor:pointer}
+.m.me{background:var(--me);color:#fff;align-self:flex-end}
+.gn{font-size:12px;font-weight:600;opacity:.8;margin-bottom:2px}.m.flash{outline:3px solid #ffb300}
+.m img{max-width:100%;max-height:300px;border-radius:12px;display:block;margin-bottom:4px}
+.m a{color:inherit;text-decoration:underline}
+.rp{font-size:12px;opacity:.8;border-left:3px solid currentColor;padding-left:6px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+.t{font-size:11px;opacity:.75;margin-top:2px}
+.acts{display:none;gap:6px;margin-top:6px}.m.act .acts{display:flex}
+.acts button{background:rgba(0,0,0,.2);color:inherit;padding:3px 8px;font-size:12px;border-radius:8px}
+#rb{display:none;padding:6px 14px;background:var(--side);border-top:1px solid var(--line);font-size:13px;color:var(--mut);justify-content:space-between}
+form.send{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);align-items:center}
+form.send input[type=text]{flex:1;padding:11px 14px;border-radius:20px;border:1px solid var(--line);background:var(--side);color:var(--fg)}
+.clip{cursor:pointer;font-size:22px}#fn{font-size:12px;color:var(--mut);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{margin:auto;color:var(--mut)}
+.ov{display:none;position:absolute;inset:50px 0 0 0;background:var(--bg);overflow:auto;padding:12px;z-index:5}
+.ov .r{padding:8px;border-bottom:1px solid var(--line);cursor:pointer}
+@media(max-width:640px){.side{width:100%;display:none}.side.show{display:flex}.main.hide{display:none}.head input{width:90px}}
+</style></head><body>
+<div class="nav"><span class="lg">&gt;_</span>programiz<small>{% if user %}{{ user.name }}{% endif %}</small></div>
+{% if not user %}
+<form class="login" method="post" action="/auth">
+  <h1 style="margin-top:0">Welcome to programiz</h1>
+  <input name="username" placeholder="Username" required autocomplete="username">
+  <input name="password" type="password" placeholder="Password" required autocomplete="current-password">
+  <input name="invite" placeholder="Invite code (new accounts only)">
+  <button style="width:100%;margin-top:8px;padding:12px">Sign in / Create account</button>
+  {% if error %}<div class="err">{{ error }}</div>{% endif %}
+  <p class="hint">New here? Pick a username and password plus the invite code. Returning? Leave the code blank.</p>
+</form>
+{% else %}
+<div class="app">
+  <div class="side show" id="side">
+    <h3>Chats <a href="/logout">Log out ({{ user.name }})</a></h3>
+    <div style="flex:1;overflow:auto"><div id="groups"></div><div class="hint" style="padding:10px 16px 2px">Direct messages</div><div id="users"></div></div>
+    <div style="padding:12px;display:flex;gap:12px">
+      <span class="lnk" id="nb">🔔 Enable notifications</span>
+      {% if user.rename or user.admin %}<span class="lnk" id="rn">✎ Rename</span>{% endif %}
+      {% if user.admin %}<span class="lnk" id="ng">＋ New group</span><span class="lnk" id="adm">⚙ Accounts</span>{% endif %}
+    </div>
+  </div>
+  <div class="main hide" id="main">
+    <div class="head"><a href="#" id="back" style="display:none">←</a>
+      <div class="t1"><span id="who">Pick someone to chat with</span><small id="st"></small></div>
+      <button class="g" id="mg" type="button" style="display:none">Members</button><input id="q" placeholder="Search…" style="display:none">
+    </div>
+    <div class="ov" id="ov"></div>
+    <div id="msgs"><div class="empty">No chat open</div></div>
+    <div id="rb"><span id="rbt"></span><a href="#" id="rbx">✕</a></div>
+    <form class="send" id="f">
+      <label class="clip" title="Attach photo or file">📎<input type="file" id="file" hidden></label>
+      <span id="fn"></span>
+      <input type="text" id="body" placeholder="Aa" autocomplete="off">
+      <button>Send</button>
+    </form>
+  </div>
+</div>
+<script>
+const ME={{ user.id }}, ADMIN={{ 'true' if user.admin else 'false' }};
+let cur=0,curT="u",last=0,since=0,reply=null,first=true,firstG=true,prev={},tt=0,curU=null,uTot=0,gTot=0;
+const $=id=>document.getElementById(id), mobile=()=>innerWidth<=640;
+const els={}, tq=()=>(curT==="g"?"g=":"with=")+cur;
+const col=n=>`hsl(${[...n].reduce((a,c)=>a*31+c.charCodeAt(0),7)%360} 55% 45%)`;
+function av(name,on,txt){const d=document.createElement("div");d.className="av"+(on?" on":"");d.style.background=col(name);d.textContent=txt||name[0].toUpperCase();return d}
+function show(chat){ $("side").classList.toggle("show",!chat); $("main").classList.toggle("hide",!chat&&mobile()); $("back").style.display=chat&&mobile()?"inline":"none"; }
+$("back").onclick=e=>{e.preventDefault();show(false)};
+function notify(t,b){ if(window.Notification&&Notification.permission==="granted"&&document.hidden)new Notification(t,{body:b}) }
+$("nb").onclick=()=>{ if(!window.Notification)return alert("Not supported in this browser");
+  Notification.requestPermission().then(p=>$("nb").textContent=p==="granted"?"🔔 Notifications on":"🔕 Blocked in browser") };
+if(window.Notification&&Notification.permission==="granted")$("nb").textContent="🔔 Notifications on";
+const title=()=>{const t=uTot+gTot;document.title=(t?`(${t}) `:"")+"programiz"};
+function row(av_,name,n,on,fn){const d=document.createElement("div");d.className="u"+(on?" on":"");d.appendChild(av_);
+  const s=document.createElement("span");s.className="n";s.textContent=name;d.appendChild(s);
+  if(n){const b=document.createElement("span");b.className="dot";b.textContent=n;d.appendChild(b)}
+  d.onclick=fn;return d}
+async function loadUsers(){
+  let us; try{us=await (await fetch("/api/users")).json()}catch(e){return}
+  const box=$("users"); box.innerHTML=""; uTot=0;
+  us.forEach(u=>{
+    const here=u.id===cur&&curT==="u", n=here&&!document.hidden?0:u.unread; uTot+=n;
+    if(!first&&u.unread>(prev["u"+u.id]||0)&&(!here||document.hidden))notify(u.username,"New message");
+    prev["u"+u.id]=u.unread;
+    if(here){curU=u;if(!$("st").dataset.typing)$("st").textContent=u.online?"Active now":""}
+    box.appendChild(row(av(u.username,u.online),u.username,n,here,()=>open(u)));
+  });
+  first=false; title();
+  if(!us.length) box.innerHTML='<div class="hint" style="padding:16px">No one else yet. Share the site link and invite code!</div>';
+}
+async function loadGroups(){
+  let gs; try{gs=await (await fetch("/api/groups")).json()}catch(e){return}
+  const box=$("groups"); box.innerHTML=""; gTot=0;
+  if(gs.length){const h=document.createElement("div");h.className="hint";h.style.padding="8px 16px 2px";h.textContent="Groups";box.appendChild(h)}
+  gs.forEach(g=>{
+    const here=g.id===cur&&curT==="g", n=here&&!document.hidden?0:g.unread; gTot+=n;
+    if(!firstG&&g.unread>(prev["g"+g.id]||0)&&(!here||document.hidden))notify(g.name,"New group message");
+    prev["g"+g.id]=g.unread;
+    box.appendChild(row(av(g.name,false,"👥"),g.name,n,here,()=>openG(g)));
+  });
+  firstG=false; title();
+}
+function reset(name){last=0;since=0;reply=null;rb();for(const k in els)delete els[k];
+  $("who").textContent=name;$("q").style.display="";$("q").value="";$("ov").style.display="none";$("st").dataset.typing="";
+  $("msgs").innerHTML="";show(true)}
+function open(u){cur=u.id;curT="u";curU=u;reset(u.username);$("mg").style.display="none";$("st").textContent=u.online?"Active now":"";poll();loadUsers();loadGroups()}
+function openG(g){cur=g.id;curT="g";curU=null;reset(g.name);$("mg").style.display=ADMIN?"":"none";$("st").textContent="Group chat";poll();loadUsers();loadGroups()}
+function rb(){ $("rb").style.display=reply?"flex":"none"; if(reply)$("rbt").textContent="Replying to: "+reply.text }
+$("rbx").onclick=e=>{e.preventDefault();reply=null;rb()};
+function render(m){
+  const d=document.createElement("div"); d.dataset.id=m.id;
+  d.className="m"+(m.sender===ME?" me":"");
+  if(curT==="g"&&m.sender!==ME){const n=document.createElement("div");n.className="gn";n.textContent=m.name||"?";d.appendChild(n)}
+  if(m.reply_to){const r=document.createElement("div");r.className="rp";r.textContent=m.rbody||"";d.appendChild(r)}
+  if(m.file){
+    const url="/files/"+encodeURIComponent(m.file);
+    if(m.img){const i=document.createElement("img");i.src=url;i.onclick=e=>{e.stopPropagation();window.open(url)};d.appendChild(i)}
+    else{const a=document.createElement("a");a.href=url;a.textContent="📄 "+m.fname;a.onclick=e=>e.stopPropagation();d.appendChild(a);d.appendChild(document.createElement("br"))}
+  }
+  if(m.body){const s=document.createElement("span");s.textContent=m.body;d.appendChild(s)}
+  const t=document.createElement("div");t.className="t";
+  t.textContent=new Date(m.ts*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+(m.edited?" · edited":"")+(m.sender===ME&&curT==="u"?(m.read?" · ✓✓ Seen":" · ✓ Sent"):"");
+  d.appendChild(t);
+  const a=document.createElement("div");a.className="acts";
+  const B=(l,f)=>{const b=document.createElement("button");b.type="button";b.textContent=l;b.onclick=e=>{e.stopPropagation();f()};a.appendChild(b)};
+  B("Reply",()=>{reply={id:m.id,text:(m.body||m.fname||"").slice(0,60)};rb();$("body").focus();d.classList.remove("act")});
+  if(m.sender===ME){
+    if(m.body)B("Edit",async()=>{const v=prompt("Edit message",m.body);if(v&&v.trim()&&v!==m.body){await fetch("/api/edit/"+m.id,{method:"POST",body:new URLSearchParams({body:v})});poll()}});
+    B("Unsend",async()=>{if(confirm("Unsend this message? It disappears for everyone with no trace.")){await fetch("/api/delete/"+m.id,{method:"POST"});poll()}});
+  }
+  d.appendChild(a); d.onclick=()=>d.classList.toggle("act");
+  return d;
+}
+function upsert(m){
+  const n=render(m), old=els[m.id], box=$("msgs");
+  if(old){if(old.classList.contains("act"))n.classList.add("act");box.replaceChild(n,old)}else box.appendChild(n);
+  els[m.id]=n;
+}
+async function poll(){
+  if(!cur)return; const id=cur,t=curT;
+  let r,resp; try{resp=await fetch(`/api/messages?${tq()}&after=${last}&since=${since}`);
+    if(resp.status===403&&t==="g"){cur=0;$("msgs").innerHTML='<div class="empty">You are no longer in this group</div>';$("mg").style.display="none";loadGroups();return}
+    r=await resp.json()}catch(e){return}
+  if(id!==cur||t!==curT)return;
+  since=r.now;
+  const box=$("msgs"),near=box.scrollHeight-box.scrollTop-box.clientHeight<120||last===0;
+  let newOnes=false;
+  r.msgs.forEach(m=>{ if(m.id>last){newOnes=true;last=m.id} upsert(m)});
+  const set=new Set(r.ids); for(const k in els)if(!set.has(+k)){els[k].remove();delete els[k]}
+  if(newOnes&&near)box.scrollTop=box.scrollHeight;
+  if(t==="u"){$("st").dataset.typing=r.typing?"1":"";$("st").textContent=r.typing?"typing…":(curU&&curU.online?"Active now":"")}
+  const e=box.querySelector(".empty");
+  if(!r.ids.length&&!e)box.innerHTML='<div class="empty">Say hi 👋</div>';else if(r.ids.length&&e)e.remove();
+}
+$("file").onchange=e=>$("fn").textContent=e.target.files[0]?.name||"";
+$("body").oninput=()=>{ if(!cur||curT!=="u"||Date.now()-tt<2500)return; tt=Date.now(); fetch("/api/typing",{method:"POST",body:new URLSearchParams({to:cur})}) };
+$("f").onsubmit=async e=>{
+  e.preventDefault(); if(!cur)return;
+  const fd=new FormData(); fd.append(curT==="g"?"g":"to",cur); fd.append("body",$("body").value);
+  if(reply)fd.append("reply_to",reply.id);
+  if($("file").files[0])fd.append("file",$("file").files[0]);
+  if(!$("body").value.trim()&&!$("file").files[0])return;
+  const r=await fetch("/api/send",{method:"POST",body:fd});
+  if(!r.ok){alert(r.status===403?"Not allowed: ask the admin to unlock uploads":"Couldn't send (files must be under 16 MB)");return}
+  $("body").value="";$("file").value="";$("fn").textContent="";reply=null;rb();
+  await poll(); $("msgs").scrollTop=$("msgs").scrollHeight;
+};
+$("q").onkeydown=async e=>{
+  if(e.key!=="Enter")return; e.preventDefault(); const q=$("q").value.trim(), ov=$("ov");
+  if(!q){ov.style.display="none";return}
+  const rs=await (await fetch(`/api/search?${tq()}&q=${encodeURIComponent(q)}`)).json();
+  ov.innerHTML="";ov.style.display="block";
+  const c=document.createElement("button");c.className="g";c.textContent="Close search";c.onclick=()=>{ov.style.display="none"};ov.appendChild(c);
+  if(!rs.length){const p=document.createElement("p");p.className="hint";p.textContent="No results";ov.appendChild(p)}
+  rs.forEach(m=>{const d=document.createElement("div");d.className="r";
+    d.textContent=(m.sender===ME?"You: ":(curT==="g"?m.name+": ":""))+m.body+"  ("+new Date(m.ts*1000).toLocaleString()+")";
+    d.onclick=()=>{ov.style.display="none";const t=els[m.id];if(t){t.scrollIntoView({block:"center"});t.classList.add("flash");setTimeout(()=>t.classList.remove("flash"),1500)}};
+    ov.appendChild(d)});
+};
+const mk=(txt,fn)=>{const b=document.createElement("button");b.className="g";b.type="button";b.textContent=txt;b.onclick=fn;return b};
+$("mg").onclick=async function manage(){
+  const g=cur, ov=$("ov"), us=await (await fetch(`/api/admin/group/${g}/members`)).json();
+  ov.innerHTML="";ov.style.display="block";
+  const h=document.createElement("h3");h.textContent="Group members";ov.appendChild(h);
+  us.forEach(u=>{const d=document.createElement("div");d.className="r";d.style.cursor="default";
+    d.append(u.username+(u.member?" ✓  ":"  "));
+    d.appendChild(mk(u.member?"Remove":"Add",async()=>{await fetch(`/api/admin/group/${g}/${u.member?"remove":"add"}/${u.id}`,{method:"POST"});manage()}));
+    ov.appendChild(d)});
+  const x=document.createElement("div");x.style.marginTop="12px";
+  x.appendChild(mk("Close",()=>{ov.style.display="none"}));x.append(" ");
+  x.appendChild(mk("Delete group",async()=>{if(confirm("Delete this group and all its messages?")){await fetch(`/api/admin/group/${g}/delete`,{method:"POST"});cur=0;ov.style.display="none";$("msgs").innerHTML='<div class="empty">Group deleted</div>';$("mg").style.display="none";loadGroups()}}));
+  ov.appendChild(x);
+};
+{% if user.admin %}
+$("ng").onclick=async()=>{const n=prompt("Group name");if(!n||!n.trim())return;
+  const r=await (await fetch("/api/admin/group_create",{method:"POST",body:new URLSearchParams({name:n})})).json();
+  await loadGroups();openG({id:r.id,name:n.trim().slice(0,40)});$("mg").onclick()};
+$("adm").onclick=async function acc(){
+  const us=await (await fetch("/api/admin/users")).json(), ov=$("ov");
+  show(true);ov.innerHTML="<h3>Accounts</h3>";ov.style.display="block";
+  const set=async(id,f,v)=>{const r=await fetch(`/api/admin/set/${id}`,{method:"POST",body:new URLSearchParams({field:f,value:v})});if(!r.ok)alert(r.status===409?"Name already taken":r.status===400?"Need at least one admin":"Not allowed");acc();loadUsers()};
+  us.forEach(u=>{const d=document.createElement("div");d.className="r";d.style.cursor="default";
+    d.append(u.username+(u.is_admin?" (admin)":"")+"  ");
+    d.appendChild(mk("Rename",()=>{const n=prompt("New name",u.username);if(n&&n.trim())set(u.id,"name",n)}));
+    [["is_admin","Admin"],["can_rename","Can rename"],["can_upload","Can upload"],["can_unsend","Can unsend"]].forEach(([f,l])=>{
+      d.append(" ");d.appendChild(mk(l+": "+(u[f]?"ON":"OFF"),()=>set(u.id,f,u[f]?"0":"1")))});
+    if(u.id!==ME){d.append(" ");d.appendChild(mk("Delete",async()=>{if(confirm("Delete "+u.username+" and all their messages?")){await fetch("/api/admin/delete_user/"+u.id,{method:"POST"});acc();loadUsers()}}))}
+    ov.appendChild(d)});
+  ov.appendChild(mk("Close",()=>{ov.style.display="none"}));
+};
+{% endif %}
+{% if user.rename or user.admin %}
+$("rn").onclick=async()=>{const n=prompt("New username");if(!n||!n.trim())return;
+  const r=await fetch("/api/rename",{method:"POST",body:new URLSearchParams({name:n})});
+  if(r.ok)location.reload();else alert(r.status===409?"Name already taken":"Not allowed")};
+{% endif %}
+loadUsers();loadGroups(); setInterval(poll,2000); setInterval(()=>{loadUsers();loadGroups()},5000);
+if(!mobile())$("main").classList.remove("hide");
+</script>
+{% endif %}
+</body></html>
