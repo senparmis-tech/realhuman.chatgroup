@@ -182,12 +182,12 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 })();
 </script>
 {% if not user %}
-<form class="login" method="post" action="/auth">
+<form class="login" method="post" action="/auth" autocomplete="off">
   <h1>Welcome to programiz</h1>
   <p class="hint" style="margin-top:0">Sign in or create a new account</p>
   <input name="username" placeholder="Username" required autocomplete="username">
   <input name="password" type="password" placeholder="Password" required autocomplete="current-password">
-  <input name="invite" placeholder="Invite code (new accounts only)">
+  <input name="invite" placeholder="Invite code (new accounts only)" autocomplete="off">
   <button style="width:100%;margin-top:12px;padding:13px;border-radius:12px;font-size:15px">Sign in / Create account</button>
   {% if error %}<div class="err">{{ error }}</div>{% endif %}
   <p class="hint">New here? Pick a username and password plus the invite code. Returning? Leave the code blank.</p>
