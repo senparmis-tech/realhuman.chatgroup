@@ -256,7 +256,7 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 <div class="nav">
   <button class="side-toggle-btn" id="sideToggle" type="button" title="Toggle chats sidebar">☰</button>
   <img src="/static/favicon.png" alt="Programiz" class="p-site-icon">programiz
-  {% if user.space %}<span class="space-badge" id="spaceSwitchBtn" title="Current space: {{ user.space }}. Click to switch">{{ user.space }} ⇄</span>{% endif %}
+  {% if user.admin %}<span class="space-badge" id="spaceSwitchBtn" title="Admin: viewing {{ user.space }}. Click to switch">{{ user.space }} ⇄</span>{% endif %}
   <div class="nav-right">
     <small>{{ user.name }}</small>
     <button class="theme-toggle" id="themeToggle" type="button" title="Toggle dark/light mode">☀️</button>
@@ -838,8 +838,12 @@ $("adm").onclick=async function acc(){
   formBox.innerHTML = `
     <div style="font-weight:600;font-size:14px;margin-bottom:10px;color:var(--fg)">➕ Create New Account</div>
     <form id="createAccForm" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-      <input id="newAccUser" placeholder="Username" required style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;width:150px">
-      <input id="newAccPw" type="password" placeholder="Password (4+ chars)" required style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;width:170px">
+      <input id="newAccUser" placeholder="Username" required style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;width:140px">
+      <input id="newAccPw" type="password" placeholder="Password (4+)" required style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;width:150px">
+      <select id="newAccSpace" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:13px;cursor:pointer">
+        <option value="classmates">classmates</option>
+        <option value="realhuman">realhuman</option>
+      </select>
       <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;color:var(--fg);user-select:none">
         <input id="newAccAdmin" type="checkbox"> Admin
       </label>
@@ -854,6 +858,7 @@ $("adm").onclick=async function acc(){
     const u = $("newAccUser").value.trim();
     const p = $("newAccPw").value;
     const isAdm = $("newAccAdmin").checked ? "1" : "0";
+    const space = $("newAccSpace").value;
     const err = $("createAccErr");
     err.style.display = "none";
     if(!u || p.length < 4){
@@ -863,7 +868,7 @@ $("adm").onclick=async function acc(){
     }
     const res = await fetch("/api/admin/create_user", {
       method: "POST",
-      body: new URLSearchParams({username: u, password: p, is_admin: isAdm})
+      body: new URLSearchParams({username: u, password: p, is_admin: isAdm, space})
     });
     const data = await res.json();
     if(!res.ok){
@@ -875,25 +880,66 @@ $("adm").onclick=async function acc(){
     loadUsers();
   };
 
-  const listHeader = document.createElement("div");
-  listHeader.className = "section-label";
-  listHeader.style.padding = "4px 0 10px 0";
-  listHeader.textContent = `All Users (${us.length})`;
-  ov.appendChild(listHeader);
+  const spGroups = {"classmates": [], "realhuman": [], "admin": []};
+  us.forEach(u => {
+    if(u.is_admin) spGroups["admin"].push(u);
+    else spGroups[u.space || "classmates"].push(u);
+  });
 
-  const set=async(id,f,v)=>{const r=await fetch(`/api/admin/set/${id}`,{method:"POST",body:new URLSearchParams({field:f,value:v})});if(!r.ok)alert(r.status===409?"Name already taken":r.status===400?"Invalid value / Need at least one admin":"Not allowed");acc();loadUsers()};
-  us.forEach(u=>{const d=document.createElement("div");d.className="r";d.style.cursor="default";
-    d.append(u.username+(u.is_admin?" (admin)":"")+"  ");
-    d.appendChild(mk("Rename",()=>{const n=prompt("New name",u.username);if(n&&n.trim())set(u.id,"name",n)}));
+  const set = async(id,f,v) => {
+    const r = await fetch(`/api/admin/set/${id}`, {method:"POST", body:new URLSearchParams({field:f,value:v})});
+    if(!r.ok) alert(r.status===409?"Name already taken":r.status===400?"Invalid value / need at least one admin":"Not allowed");
+    acc();loadUsers();
+  };
+
+  const renderUserRow = (u) => {
+    const d = document.createElement("div");
+    d.className = "r";
+    d.style.cursor = "default";
+    const spTag = u.is_admin ? " (admin)" : ` [${u.space||"classmates"}]`;
+    d.append(u.username + spTag + "  ");
+    d.appendChild(mk("Rename", () => { const n=prompt("New name", u.username); if(n&&n.trim()) set(u.id,"name",n); }));
     d.append(" ");
-    d.appendChild(mk("Reset Password",()=>{const p=prompt("New password for "+u.username);if(p&&p.length>=4)set(u.id,"pw",p);else if(p)alert("Password must be at least 4 characters")}));
-    [["is_admin","Admin"],["can_rename","Can rename"],["can_upload","Can upload"],["can_unsend","Can unsend"]].forEach(([f,l])=>{
-      d.append(" ");d.appendChild(mk(l+": "+(u[f]?"ON":"OFF"),()=>set(u.id,f,u[f]?"0":"1")))});
-    if(u.id!==ME){d.append(" ");d.appendChild(mk("Delete",async()=>{if(confirm("Delete "+u.username+" and all their messages?")){await fetch("/api/admin/delete_user/"+u.id,{method:"POST"});acc();loadUsers()}}))}
-    ov.appendChild(d)});
+    d.appendChild(mk("Reset Password", () => { const p=prompt("New password for "+u.username); if(p&&p.length>=4) set(u.id,"pw",p); else if(p) alert("Password must be 4+ characters"); }));
+    if(!u.is_admin){
+      const curSp = u.space || "classmates";
+      const otherSp = curSp === "classmates" ? "realhuman" : "classmates";
+      d.append(" ");
+      d.appendChild(mk(`Move to ${otherSp}`, async () => {
+        if(confirm(`Move "${u.username}" from [${curSp}] to [${otherSp}]?\n\nTheir existing chat history stays in [${curSp}]. They will see [${otherSp}] chats on their next login.`)){
+          await set(u.id, "space", otherSp);
+        }
+      }));
+    }
+    [["is_admin","Admin"],["can_rename","Rename"],["can_upload","Upload"],["can_unsend","Unsend"]].forEach(([f,l]) => {
+      d.append(" ");
+      d.appendChild(mk(l+":"+(u[f]?"on":"off"), () => set(u.id, f, u[f]?"0":"1")));
+    });
+    if(u.id !== ME){
+      d.append(" ");
+      d.appendChild(mk("Delete", async () => {
+        if(confirm("Delete "+u.username+" and all their messages?")){
+          await fetch("/api/admin/delete_user/"+u.id, {method:"POST"});
+          acc(); loadUsers();
+        }
+      }));
+    }
+    return d;
+  };
+
+  [["classmates", "classmates space"], ["realhuman", "realhuman space"], ["admin", "Admins"]].forEach(([key, label]) => {
+    if(!spGroups[key].length) return;
+    const hdr = document.createElement("div");
+    hdr.className = "section-label";
+    hdr.style.padding = "10px 0 6px 0";
+    hdr.textContent = label + " (" + spGroups[key].length + ")";
+    ov.appendChild(hdr);
+    spGroups[key].forEach(u => ov.appendChild(renderUserRow(u)));
+  });
+
   const foot = document.createElement("div");
   foot.style.marginTop = "14px";
-  foot.appendChild(mk("Close",()=>{ov.style.display="none"}));
+  foot.appendChild(mk("Close", () => {ov.style.display="none"}));
   ov.appendChild(foot);
 };
 if($("na")){

@@ -67,7 +67,7 @@ def init_db():
     for col, typ in [("is_admin", "INTEGER DEFAULT 0"), ("last_seen", "REAL DEFAULT 0"),
                      ("typing_to", "INTEGER"), ("typing_ts", "REAL DEFAULT 0"),
                      ("can_rename", "INTEGER DEFAULT 0"), ("can_upload", "INTEGER DEFAULT 1"),
-                     ("can_unsend", "INTEGER DEFAULT 1")]:
+                     ("can_unsend", "INTEGER DEFAULT 1"), ("space", "TEXT DEFAULT 'classmates'")]:
         if col not in cols("users"):
             c.execute(f"ALTER TABLE users ADD COLUMN {col} {typ}")
     for col, typ in [("edited", "INTEGER DEFAULT 0"), ("deleted", "INTEGER DEFAULT 0"),
@@ -77,6 +77,9 @@ def init_db():
             c.execute(f"ALTER TABLE messages ADD COLUMN {col} {typ}")
     if "space" not in cols("groups"):
         c.execute("ALTER TABLE groups ADD COLUMN space TEXT DEFAULT 'classmates'")
+    c.execute("UPDATE users SET space='classmates' WHERE space IS NULL OR space=''")
+    c.execute("UPDATE messages SET space='classmates' WHERE space IS NULL OR space=''")
+    c.execute("UPDATE groups SET space='classmates' WHERE space IS NULL OR space=''")
     c.execute("DELETE FROM messages WHERE deleted=1")  # old "deleted" placeholders: remove all trace
     c.execute("UPDATE messages SET upd=ts WHERE upd=0 OR upd IS NULL")
     adm_row = c.execute("SELECT id FROM users WHERE username='admin' COLLATE NOCASE").fetchone()
@@ -98,7 +101,15 @@ def me():
 
 
 def current_space():
-    return session.get("space", DEFAULT_SPACE)
+    """Admins can freely switch spaces via session. Regular users are always pinned to their DB space."""
+    if not me():
+        return DEFAULT_SPACE
+    if is_admin():
+        return session.get("space", DEFAULT_SPACE)
+    r = db().execute("SELECT space FROM users WHERE id=?", (me(),)).fetchone()
+    sp = r["space"] if r and r["space"] in VALID_SPACES else DEFAULT_SPACE
+    session["space"] = sp
+    return sp
 
 
 def need_login():
@@ -176,18 +187,25 @@ def auth():
         return redirect("/?e=Enter a username and a password (4+ characters)")
     row = db().execute("SELECT * FROM users WHERE username=? COLLATE NOCASE", (name,)).fetchone()
     bad = None
-    target_space = invite if invite in VALID_SPACES else DEFAULT_SPACE
+    target_space = DEFAULT_SPACE
     if row:
         if not check_password_hash(row["pw"], pw):
             bad = "Invalid username or password"
         elif invite and invite not in VALID_SPACES:
             bad = "Invalid code. Use 'classmates' or 'realhuman'"
+        else:
+            # Existing users: admins can use invite code to pick space; regular users always get their DB space
+            if row["is_admin"] and invite in VALID_SPACES:
+                target_space = invite
+            else:
+                target_space = row["space"] if row["space"] in VALID_SPACES else DEFAULT_SPACE
     elif invite in VALID_SPACES:
         first = not db().execute("SELECT 1 FROM users").fetchone()
-        cur = db().execute("INSERT INTO users(username,pw,is_admin) VALUES(?,?,?)",
-                           (name, generate_password_hash(pw), 1 if first else 0))
+        cur = db().execute("INSERT INTO users(username,pw,is_admin,space) VALUES(?,?,?,?)",
+                           (name, generate_password_hash(pw), 1 if first else 0, invite))
         db().commit()
         row = db().execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone()
+        target_space = invite
     elif not invite:
         bad = "New account? Enter an invite code. Returning? Invalid username/password"
     else:
@@ -211,7 +229,8 @@ def logout():
 
 @app.route("/api/space/<name>", methods=["POST"])
 def switch_space(name):
-    need_login()
+    """Only admins can switch spaces freely."""
+    admin_only()
     name = name.lower()
     if name in VALID_SPACES:
         session["space"] = name
@@ -224,10 +243,18 @@ def users():
     need_login()
     now = time.time()
     sp = current_space()
-    rows = db().execute("""
-      SELECT u.id, u.username, u.last_seen,
-        (SELECT COUNT(*) FROM messages WHERE sender=u.id AND recipient=? AND read_ts IS NULL AND deleted=0 AND (space=? OR space IS NULL)) AS unread
-      FROM users u WHERE u.id<>? ORDER BY u.username""", (me(), sp, me())).fetchall()
+    # Admins see everyone (across all spaces, filtered by their current viewed space);
+    # regular users only see admins + users in their own space
+    if is_admin():
+        rows = db().execute("""
+          SELECT u.id, u.username, u.last_seen, u.space,
+            (SELECT COUNT(*) FROM messages WHERE sender=u.id AND recipient=? AND read_ts IS NULL AND deleted=0 AND space=?) AS unread
+          FROM users u WHERE u.id<>? ORDER BY u.username""", (me(), sp, me())).fetchall()
+    else:
+        rows = db().execute("""
+          SELECT u.id, u.username, u.last_seen, u.space,
+            (SELECT COUNT(*) FROM messages WHERE sender=u.id AND recipient=? AND read_ts IS NULL AND deleted=0 AND space=?) AS unread
+          FROM users u WHERE u.id<>? AND (u.is_admin=1 OR u.space=?) ORDER BY u.username""", (me(), sp, me(), sp)).fetchall()
     return jsonify([dict(id=r["id"], username=r["username"], unread=r["unread"],
                          online=now - (r["last_seen"] or 0) < 15) for r in rows])
 
@@ -280,20 +307,20 @@ def messages():
     g_ = request.args.get("g", type=int)
     if g_:
         gm(g_)
-        rows = d.execute(MSG_SQL + "WHERE (m.id>? OR m.upd>?) AND m.grp=? AND (m.space=? OR m.space IS NULL) ORDER BY m.id", (after, since, g_, sp)).fetchall()
-        ids = [r[0] for r in d.execute("SELECT id FROM messages WHERE grp=? AND (space=? OR space IS NULL)", (g_, sp))]
+        rows = d.execute(MSG_SQL + "WHERE (m.id>? OR m.upd>?) AND m.grp=? AND m.space=? ORDER BY m.id", (after, since, g_, sp)).fetchall()
+        ids = [r[0] for r in d.execute("SELECT id FROM messages WHERE grp=? AND space=?", (g_, sp))]
         d.execute("UPDATE gmembers SET last_read=? WHERE gid=? AND uid=?", (max(ids, default=0), g_, me()))
         d.commit()
         rx_map = get_reactions_for_msgs([r["id"] for r in rows])
         return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=False)
-    d.execute("UPDATE messages SET read_ts=?, upd=? WHERE sender=? AND recipient=? AND read_ts IS NULL AND (space=? OR space IS NULL)",
+    d.execute("UPDATE messages SET read_ts=?, upd=? WHERE sender=? AND recipient=? AND read_ts IS NULL AND space=?",
               (now, now, other, me(), sp))
     d.commit()
-    rows = d.execute(MSG_SQL + "WHERE (m.id>? OR m.upd>?) AND " + PAIR + " AND (m.space=? OR m.space IS NULL) ORDER BY m.id",
+    rows = d.execute(MSG_SQL + "WHERE (m.id>? OR m.upd>?) AND " + PAIR + " AND m.space=? ORDER BY m.id",
                      (after, since, me(), other, other, me(), sp)).fetchall()
     t = d.execute("SELECT typing_to, typing_ts FROM users WHERE id=?", (other,)).fetchone()
     typing = bool(t and t["typing_to"] == me() and now - (t["typing_ts"] or 0) < 4)
-    ids = [r[0] for r in d.execute("SELECT m.id FROM messages m WHERE " + PAIR + " AND (m.space=? OR m.space IS NULL)", (me(), other, other, me(), sp))]
+    ids = [r[0] for r in d.execute("SELECT m.id FROM messages m WHERE " + PAIR + " AND m.space=?", (me(), other, other, me(), sp))]
     rx_map = get_reactions_for_msgs([r["id"] for r in rows])
     return jsonify(msgs=[row_json(r, rx_map) for r in rows], ids=ids, now=now - 1, typing=typing)
 
@@ -441,7 +468,7 @@ def search():
 @app.route("/api/admin/users")
 def admin_users():
     admin_only()
-    rows = db().execute("SELECT id, username, is_admin, can_rename, can_upload, can_unsend FROM users ORDER BY id").fetchall()
+    rows = db().execute("SELECT id, username, is_admin, can_rename, can_upload, can_unsend, space FROM users ORDER BY id").fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -465,6 +492,11 @@ def admin_set(uid):
             abort(400)
         db().execute("UPDATE users SET pw=? WHERE id=?", (generate_password_hash(v), uid))
         db().commit()
+    elif f == "space":
+        if v not in VALID_SPACES:
+            abort(400)
+        db().execute("UPDATE users SET space=? WHERE id=?", (v, uid))
+        db().commit()
     elif f in ("is_admin", "can_rename", "can_upload", "can_unsend"):
         val = 1 if v == "1" else 0
         if f == "is_admin" and not val and not db().execute(
@@ -483,6 +515,9 @@ def admin_create_user():
     name = request.form.get("username", "").strip()[:30]
     pw = request.form.get("password", "")
     is_adm = 1 if request.form.get("is_admin") in ("1", "true", "on") else 0
+    space = request.form.get("space", DEFAULT_SPACE).strip().lower()
+    if space not in VALID_SPACES:
+        space = DEFAULT_SPACE
     if not name:
         return jsonify(ok=False, error="Username is required"), 400
     if len(pw) < 4:
@@ -490,11 +525,11 @@ def admin_create_user():
     if db().execute("SELECT 1 FROM users WHERE username=? COLLATE NOCASE", (name,)).fetchone():
         return jsonify(ok=False, error="Username already taken"), 409
     cur = db().execute(
-        "INSERT INTO users(username, pw, is_admin, can_rename, can_upload, can_unsend) VALUES(?,?,?,?,1,1)",
-        (name, generate_password_hash(pw), is_adm, 1 if is_adm else 0)
+        "INSERT INTO users(username, pw, is_admin, can_rename, can_upload, can_unsend, space) VALUES(?,?,?,?,1,1,?)",
+        (name, generate_password_hash(pw), is_adm, 1 if is_adm else 0, space)
     )
     db().commit()
-    return jsonify(ok=True, id=cur.lastrowid, username=name)
+    return jsonify(ok=True, id=cur.lastrowid, username=name, space=space)
 
 
 @app.route("/api/admin/delete_user/<int:uid>", methods=["POST"])
