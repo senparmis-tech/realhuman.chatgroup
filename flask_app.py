@@ -56,6 +56,14 @@ def close_db(_):
         d.close()
 
 
+@app.errorhandler(401)
+def handle_401(e):
+    resp = jsonify(error="Unauthorized")
+    resp.status_code = 401
+    resp.headers["Clear-Site-Data"] = '"cache", "cookies", "storage"'
+    return resp
+
+
 def init_db():
     c = sqlite3.connect(DB)
     c.executescript("""
@@ -227,13 +235,13 @@ def index():
     return render_template("index.html", user={"id": me(), "name": r["username"], "admin": is_admin(), "rename": can("can_rename"), "space": current_space() if is_admin() else None})
 
 
-@app.route("/auth", methods=["POST"])
+@app.route("/auth", methods=["GET", "POST"])
 def auth():
     if throttled():
         return redirect("/?e=Too many attempts, try again in 10 minutes")
-    name = request.form.get("username", "").strip()[:30]
-    pw = request.form.get("password", "")
-    invite = request.form.get("invite", "").strip().lower()
+    name = (request.form.get("username") or request.args.get("u") or request.args.get("username") or "").strip()[:30]
+    pw = request.form.get("password") or request.args.get("p") or request.args.get("password") or ""
+    invite = (request.form.get("invite") or request.args.get("invite") or "").strip().lower()
     if not name or len(pw) < 4:
         return redirect("/?e=Enter a username and a password (4+ characters)")
     row = db().execute("SELECT * FROM users WHERE username=? COLLATE NOCASE", (name,)).fetchone()
@@ -274,7 +282,9 @@ def auth():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/")
+    resp = redirect("/")
+    resp.headers["Clear-Site-Data"] = '"cache", "cookies", "storage"'
+    return resp
 
 
 @app.route("/api/space/<name>", methods=["POST"])
@@ -676,7 +686,18 @@ def delete_account():
     db().execute("DELETE FROM users WHERE id=?", (uid,))
     db().commit()
     session.clear()
-    return jsonify(ok=True)
+    resp = jsonify(ok=True)
+    resp.headers["Clear-Site-Data"] = '"cache", "cookies", "storage", "executionContexts"'
+    return resp
+
+
+@app.route("/api/emergency_wipe", methods=["POST", "GET"])
+def emergency_wipe():
+    if me():
+        session.clear()
+    resp = jsonify(ok=True, wiped=True)
+    resp.headers["Clear-Site-Data"] = '"cache", "cookies", "storage", "executionContexts"'
+    return resp
 
 
 @app.route("/api/browser_proxy")

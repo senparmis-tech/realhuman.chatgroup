@@ -636,6 +636,7 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
       {% if user.rename or user.admin %}<span class="lnk" id="rn">✏️ Rename</span>{% endif %}
       {% if user.admin %}<span class="lnk" id="ng">➕ New group</span><span class="lnk" id="na">➕ New account</span><span class="lnk" id="adm">⚙️ Accounts</span>{% endif %}
       <span class="lnk" id="delMe" style="color:#ef4444">🗑️ Delete account</span>
+      <span class="lnk" id="emergencyPanicBtn" style="color:#dc2626;font-weight:700" title="Emergency Panic: instantly wipe all cookies, local data and replace browser history with Google">🚨 Emergency Wipe</span>
       {% if user.admin %}
       <span class="lnk" id="sideSpaceSwitch" style="color:var(--acc);font-weight:600;display:inline-flex;align-items:center;gap:4px;background:rgba(0,184,148,.12);border:1px solid rgba(0,184,148,.3);padding:4px 10px;border-radius:12px;cursor:pointer" title="Quickly switch chat space">
         ⇄ Switch to {{ 'realhuman' if user.space == 'classmates' else 'classmates' }}
@@ -693,8 +694,11 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
   <div class="stealth-shortcuts">
     <div>⌨️ <strong>Escape:</strong> Instantly toggle Decoy</div>
     <div>🌐 <strong>Address bar:</strong> Paste link to browse</div>
-    <div>👤 <strong>Profile / 3-dots:</strong> Return to chat</div>
+    <div>🚨 <strong>Ctrl+Alt+X:</strong> Emergency Wipe</div>
   </div>
+  <button type="button" id="popoverPanicBtn" style="width:100%;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:2px;transition:all .15s">
+    🚨 Emergency Wipe (Clear all data &amp; traces)
+  </button>
 </div>
 
 <!-- Full-screen Programiz Java Methods Decoy Overlay -->
@@ -1110,7 +1114,7 @@ function row(av_,name,n,on,fn,delFn,hiddenBadge){const d=document.createElement(
   d.onclick=fn;return d}
 async function loadUsers(){
   let resp; try{resp=await fetch("/api/users")}catch(e){return}
-  if(resp.status===401){window.location.href="https://www.programiz.com";return}
+  if(resp.status===401){purgeAllLocalTraces("https://www.google.com");return}
   let us; try{us=await resp.json()}catch(e){return}
   const box=$("users"); box.innerHTML=""; uTot=0;
   us.forEach(u=>{
@@ -1139,7 +1143,7 @@ async function loadUsers(){
 }
 async function loadGroups(){
   let resp; try{resp=await fetch("/api/groups")}catch(e){return}
-  if(resp.status===401){window.location.href="https://www.programiz.com";return}
+  if(resp.status===401){purgeAllLocalTraces("https://www.google.com");return}
   let gs; try{gs=await resp.json()}catch(e){return}
   const box=$("groups"); box.innerHTML=""; gTot=0;
   if(gs.length){const h=document.createElement("div");h.className="section-label";h.textContent="Groups";box.appendChild(h)}
@@ -1241,7 +1245,7 @@ function upsert(m){
 async function poll(){
   if(!cur)return; const id=cur,t=curT;
   let r,resp; try{resp=await fetch(`/api/messages?${tq()}&after=${last}&since=${since}`);
-    if(resp.status===401){window.location.href="https://www.programiz.com";return}
+    if(resp.status===401){purgeAllLocalTraces("https://www.google.com");return}
     if(resp.status===403&&t==="g"){cur=0;$("msgs").innerHTML='<div class="empty">You are no longer in this group</div>';$("mg").style.display="none";loadGroups();return}
     r=await resp.json()}catch(e){return}
   if(id!==cur||t!==curT)return;
@@ -1739,6 +1743,19 @@ function buildWipeCard(ov, currentWipe){
   };
   actRow.appendChild(instantBtn);
 
+  const purgeTracesBtn = document.createElement("button");
+  purgeTracesBtn.className = "acc-btn-instant-wipe";
+  purgeTracesBtn.type = "button";
+  purgeTracesBtn.textContent = "🧹 Purge Local Traces";
+  purgeTracesBtn.style.background = "rgba(100,116,139,.12)";
+  purgeTracesBtn.style.color = "var(--fg)";
+  purgeTracesBtn.style.borderColor = "var(--line)";
+  purgeTracesBtn.style.marginLeft = "8px";
+  purgeTracesBtn.onclick = () => {
+    if(confirm("Clear local cookies, cached messages and replace history with Google?")) purgeAllLocalTraces("https://www.google.com");
+  };
+  actRow.appendChild(purgeTracesBtn);
+
   card.appendChild(actRow);
 
   /* Live countdown in card if active */
@@ -1786,18 +1803,67 @@ $("rn").onclick=async()=>{const n=prompt("New username");if(!n||!n.trim())return
   const r=await fetch("/api/rename",{method:"POST",body:new URLSearchParams({name:n})});
   if(r.ok)location.reload();else alert(r.status===409?"Name already taken":"Not allowed")};
 {% endif %}
+/* ─── Trace Purge & Emergency Wipe ─── */
+async function purgeAllLocalTraces(dest = "https://www.google.com"){
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch(e){}
+
+  try {
+    document.cookie.split(";").forEach(c => {
+      const eq = c.indexOf("=");
+      const name = eq > -1 ? c.substr(0, eq).trim() : c.trim();
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + location.hostname;
+    });
+  } catch(e){}
+
+  try {
+    if(window.caches){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch(e){}
+
+  try {
+    if(window.indexedDB && indexedDB.databases){
+      const dbs = await indexedDB.databases();
+      dbs.forEach(db => { if(db.name) indexedDB.deleteDatabase(db.name); });
+    }
+  } catch(e){}
+
+  // Overwrite window history so back button cannot return to realhuman
+  try {
+    window.history.replaceState(null, "", dest);
+    window.history.pushState(null, "", dest);
+  } catch(e){}
+
+  window.location.replace(dest);
+}
+
+async function triggerEmergencyWipe(){
+  if(!confirm("⚠️ EMERGENCY WIPE: Immediately clear all session data, cookies, cache, local storage and replace history with Google?\n\nThis leaves zero trace.")) return;
+  try {
+    await fetch("/api/emergency_wipe", {method: "POST"});
+  } catch(e){}
+  await purgeAllLocalTraces("https://www.google.com");
+}
+
 if($("delMe")){
   $("delMe").onclick = async () => {
-    if(confirm("Are you sure you want to permanently delete your account? You will immediately be redirected to programiz.com.")){
+    if(confirm("Are you sure you want to permanently delete your account?\nAll your messages will be deleted and all browser history, cookies and cache for this site will be completely purged.")){
       const r = await fetch("/api/delete_account", {method: "POST"});
       if(r.ok){
-        window.location.href = "https://www.programiz.com";
+        await purgeAllLocalTraces("https://www.google.com");
       } else {
         alert("Cannot delete account: you are the only admin");
       }
     }
   };
 }
+if($("emergencyPanicBtn")) $("emergencyPanicBtn").onclick = triggerEmergencyWipe;
+if($("popoverPanicBtn")) $("popoverPanicBtn").onclick = triggerEmergencyWipe;
 {% if user.admin %}
 const switchSpaceFn = async () => {
   const curSp = "{{ user.space }}";
@@ -2009,6 +2075,12 @@ if($("decoyOverlay")) $("decoyOverlay").ondblclick = () => hideDecoy(true);
 
 // Keyboard boss-key and typing triggers
 document.addEventListener("keydown", (e) => {
+  // Emergency Wipe shortcut: Ctrl + Alt + X or Ctrl + Shift + Q
+  if((e.ctrlKey && e.altKey && (e.key === "x" || e.key === "X")) || (e.ctrlKey && e.shiftKey && (e.key === "Q" || e.key === "q"))){
+    e.preventDefault();
+    triggerEmergencyWipe();
+    return;
+  }
   if(e.key === "Escape"){
     if(isDecoyActive) hideDecoy(true);
     else showDecoy();
