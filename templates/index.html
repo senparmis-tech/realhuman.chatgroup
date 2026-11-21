@@ -308,6 +308,79 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
 .acc-wipe-live-box{background:rgba(239,68,68,.08);border:1px dashed rgba(239,68,68,.35);border-radius:12px;padding:12px 16px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .countdown-digits{font-family:"Fira Code",Consolas,monospace;font-size:22px;font-weight:700;color:#ef4444;letter-spacing:1.5px}
 
+/* ─── Stealth Decoy / Boss Screen ─── */
+.stealth-pill-btn{background:rgba(37,99,235,.1);color:#2563eb;border:1px solid rgba(37,99,235,.28);font-size:12px;font-weight:600;padding:4px 10px;border-radius:14px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
+.stealth-pill-btn:hover{background:#2563eb;color:#fff}
+[data-theme="dark"] .stealth-pill-btn{background:rgba(96,165,250,.15);color:#93c5fd;border-color:rgba(96,165,250,.35)}
+[data-theme="dark"] .stealth-pill-btn:hover{background:#2563eb;color:#fff}
+.stealth-popover{position:absolute;top:62px;right:75px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px var(--shadow);padding:16px;width:290px;z-index:90;display:flex;flex-direction:column;gap:10px}
+.stealth-popover-title{font-size:14px;font-weight:700;color:var(--fg);display:flex;align-items:center;gap:6px}
+.stealth-popover-desc{font-size:12px;color:var(--mut);line-height:1.45}
+.stealth-field{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:500;color:var(--fg);margin-top:4px}
+.stealth-field select{padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--side);color:var(--fg);font-size:12.5px;outline:none}
+.stealth-shortcuts{background:var(--them);border-radius:8px;padding:8px 10px;font-size:11.5px;color:var(--mut);line-height:1.6;margin-top:4px}
+
+.p-decoy-screen{position:fixed;inset:0;z-index:99999;background:#ffffff;color:#1e293b;display:flex;flex-direction:column;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+
+/* Promo Banner */
+.p-promo-banner{background:#0b071e;background:linear-gradient(90deg,#070518 0%,#11092e 45%,#1a0c43 80%,#220d52 100%);color:#fff;padding:8px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0;min-height:50px;position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.08)}
+.p-promo-banner::after{content:"";position:absolute;right:0;top:0;bottom:0;width:320px;background:radial-gradient(circle at 100% 50%,rgba(147,51,234,.35),transparent 70%);pointer-events:none}
+.p-promo-left{display:flex;align-items:center;gap:14px;flex-shrink:0;z-index:2}
+.p-promo-badge{background:#000;border:1px solid rgba(255,255,255,.25);border-radius:18px;padding:2px 8px;display:flex;flex-direction:column;align-items:center;line-height:1.15;cursor:default}
+.p-badge-black{font-size:9px;font-weight:900;letter-spacing:.6px;color:#fff;display:flex;align-items:center;gap:3px}
+.p-badge-pct{background:#ff4742;color:#fff;font-size:8.5px;font-weight:900;padding:1px 4px;border-radius:6px}
+.p-badge-nov{font-size:8px;font-weight:800;letter-spacing:1px;color:#cbd5e1}
+.p-promo-timer{background:#1e1442;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 12px;font-size:13px;font-weight:700;font-family:"Fira Code",Consolas,Monaco,monospace;letter-spacing:.5px;color:#fff}
+.p-promo-center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1;min-width:0;z-index:2}
+.p-promo-title{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.1px}
+.p-promo-sub{font-size:11.5px;color:#cbd5e1;font-weight:400;opacity:.9;margin-top:1px}
+.p-promo-right{flex-shrink:0;z-index:2}
+.p-promo-btn{background:#2563eb;color:#fff;border:none;font-size:12.5px;font-weight:700;padding:8px 18px;border-radius:6px;cursor:pointer;transition:background .15s}
+.p-promo-btn:hover{background:#1d4ed8}
+
+/* Decoy Navbar */
+.p-decoy-nav{background:#fff;height:56px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 28px;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.p-decoy-nav-left{display:flex;align-items:center;gap:24px}
+.p-decoy-logo{display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none}
+.p-decoy-site-icon{width:28px;height:28px;border-radius:6px;object-fit:contain}
+.p-decoy-brand{font-size:21px;font-weight:800;color:#1e293b;letter-spacing:-.4px}
+.p-decoy-links{display:flex;align-items:center;gap:20px}
+.p-decoy-link{font-size:13.5px;font-weight:500;color:#334155;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.p-decoy-link:hover{color:#2563eb}
+.p-arrow{font-size:9px;color:#64748b}
+.p-decoy-search-wrap{margin-left:6px}
+.p-decoy-search-box{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:6px 14px;width:250px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.p-decoy-search-box:hover{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.12)}
+.p-search-svg{color:#64748b;flex-shrink:0}
+.p-decoy-search-box input{border:none;background:transparent;outline:none;font-size:12.5px;color:#334155;width:100%;font-family:inherit;cursor:pointer}
+.p-decoy-nav-right{display:flex;align-items:center;gap:12px}
+.p-decoy-btn-pro{background:transparent;color:#2563eb;border:1.5px solid #2563eb;font-size:12.5px;font-weight:600;padding:6px 16px;border-radius:6px;cursor:pointer;transition:all .15s}
+.p-decoy-btn-pro:hover{background:#2563eb;color:#fff}
+
+/* Decoy Curriculum Layout */
+.p-decoy-layout{display:flex;flex:1;min-height:0;background:#fff}
+.p-decoy-sidebar{width:270px;flex-shrink:0;border-right:1px solid #e5e7eb;padding:24px 16px;overflow-y:auto;background:#fff}
+.p-tree-card{border:1px solid #e2e8f0;border-radius:8px;padding:11px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;font-size:13.5px;font-weight:600;color:#1e293b;cursor:pointer;transition:background .15s;background:#fff}
+.p-tree-card:hover{background:#f8fafc}
+.p-tree-card.open{border-bottom-left-radius:0;border-bottom-right-radius:0;margin-bottom:0;border-bottom:none;background:#fff}
+.p-chevron{font-size:16px;color:#94a3b8;font-weight:400;transition:transform .15s}
+.p-chevron.open{transform:rotate(90deg);display:inline-block}
+.p-tree-children{border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:10px 14px 14px 18px;margin-bottom:8px;position:relative;background:#fff}
+.p-tree-line{position:absolute;left:25px;top:16px;bottom:20px;width:1.5px;background:#e2e8f0}
+.p-tree-node{display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer;position:relative;z-index:2}
+.p-node-icon{width:16px;height:16px;display:flex;align-items:center;justify-content:center;background:#fff}
+.p-node-label{font-size:13px;color:#475569;font-weight:400;transition:color .15s}
+.p-node-label:hover{color:#2563eb}
+.p-node-label.active{color:#2563eb;font-weight:600}
+
+/* Decoy Main Content */
+.p-decoy-main{flex:1;padding:44px 64px;overflow-y:auto;background:#fff}
+.p-decoy-article{max-width:800px}
+.p-article-h1{font-size:36px;font-weight:800;color:#1e293b;margin:0 0 24px;letter-spacing:-.6px}
+.p-article-p{font-size:15px;line-height:1.75;color:#334155;margin:0 0 18px}
+.p-article-ul{margin:0 0 20px 24px;padding:0;font-size:15px;line-height:1.8;color:#334155}
+.p-article-ul li{margin-bottom:6px}
+
 /* ─── Mobile ─── */
 @media(max-width:640px){
   .side{width:100%;display:none}
@@ -324,6 +397,9 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
   <img src="/static/favicon.png" alt="Programiz" class="p-site-icon">programiz
   {% if user.admin %}<span class="space-badge" id="spaceSwitchBtn" title="Admin: viewing {{ user.space }}. Click to switch">{{ user.space }} ⇄</span>{% endif %}
   <div class="nav-right">
+    <button class="stealth-pill-btn" id="stealthMenuBtn" type="button" title="Stealth Decoy: disguises screen as Programiz Java tutorial when not typing">
+      🛡️ <span id="stealthPillLabel">Stealth: 5s</span>
+    </button>
     <small>{{ user.name }}</small>
     <button class="theme-toggle" id="themeToggle" type="button" title="Toggle dark/light mode">☀️</button>
   </div>
@@ -509,6 +585,153 @@ form.send button{border-radius:20px;padding:10px 22px;font-size:14px;height:42px
     <div class="emoji-picker" id="emojiPicker"></div>
   </div>
 </div>
+<div class="stealth-popover" id="stealthPopover" style="display:none">
+  <div class="stealth-popover-title">🛡️ Stealth Decoy Settings</div>
+  <div class="stealth-popover-desc">Disguises screen as Programiz Java tutorial whenever you're not typing to another user.</div>
+  <label class="stealth-field">
+    <span>Timeout:</span>
+    <select id="stealthTimeoutSelect">
+      <option value="3">3 seconds</option>
+      <option value="5">5 seconds (Default)</option>
+      <option value="10">10 seconds</option>
+      <option value="30">30 seconds</option>
+      <option value="blur">On Unfocus / Blur</option>
+      <option value="off">Disabled</option>
+    </select>
+  </label>
+  <div class="stealth-shortcuts">
+    <div>⌨️ <strong>Escape:</strong> Instantly toggle Decoy</div>
+    <div>🔍 <strong>Search box:</strong> Click to return to chat</div>
+    <div>⚡ <strong>Typing / Double-click:</strong> Return to chat</div>
+  </div>
+</div>
+
+<!-- Full-screen Programiz Java Methods Decoy Overlay -->
+<div id="decoyOverlay" class="p-decoy-screen" style="display:none">
+  <!-- Top AI Promo Banner -->
+  <div class="p-promo-banner">
+    <div class="p-promo-left">
+      <div class="p-promo-badge">
+        <div class="p-badge-black">BLACK <span class="p-badge-pct">65%</span></div>
+        <div class="p-badge-nov">NOVEMBER</div>
+      </div>
+      <div class="p-promo-timer" id="decoyPromoTimer">15h: 20m: 38s</div>
+    </div>
+    <div class="p-promo-center">
+      <div class="p-promo-title">Worried you're falling behind on AI?</div>
+      <div class="p-promo-sub">Learn how AI works under the hood and build the skills to stand out in tech.</div>
+    </div>
+    <div class="p-promo-right">
+      <button type="button" class="p-promo-btn" onclick="event.stopPropagation()">Become a PRO</button>
+    </div>
+  </div>
+
+  <!-- Decoy Programiz Navbar -->
+  <header class="p-decoy-nav">
+    <div class="p-decoy-nav-left">
+      <div class="p-decoy-logo" id="decoyLogoBack" title="Programiz">
+        <img src="/static/favicon.png" alt="Programiz" class="p-decoy-site-icon">
+        <span class="p-decoy-brand">Programiz</span>
+      </div>
+      <nav class="p-decoy-links">
+        <div class="p-decoy-link">Online Compilers <span class="p-arrow">▾</span></div>
+        <div class="p-decoy-link">Tutorials <span class="p-arrow">▾</span></div>
+      </nav>
+      <div class="p-decoy-search-wrap">
+        <div class="p-decoy-search-box" id="decoySearchBox" title="Click or press Esc to return to chat">
+          <svg class="p-search-svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+          </svg>
+          <input type="text" placeholder="Search tutorials &amp; examples" id="decoySearchInput">
+        </div>
+      </div>
+    </div>
+    <div class="p-decoy-nav-right">
+      <button type="button" class="p-decoy-btn-pro" onclick="event.stopPropagation()">Try Programiz PRO</button>
+    </div>
+  </header>
+
+  <!-- Decoy Curriculum Layout -->
+  <div class="p-decoy-layout">
+    <aside class="p-decoy-sidebar">
+      <div class="p-tree-group">
+        <div class="p-tree-card" data-topic="Java Introduction">
+          <span>Java Introduction</span>
+          <span class="p-chevron">›</span>
+        </div>
+        <div class="p-tree-card" data-topic="Java Fundamentals">
+          <span>Java Fundamentals</span>
+          <span class="p-chevron">›</span>
+        </div>
+        <div class="p-tree-card" data-topic="Java Flow Control">
+          <span>Java Flow Control</span>
+          <span class="p-chevron">›</span>
+        </div>
+        <div class="p-tree-card" data-topic="Java Arrays">
+          <span>Java Arrays</span>
+          <span class="p-chevron">›</span>
+        </div>
+        <div class="p-tree-card open" id="decoyOopGroup">
+          <span>Java OOP(I)</span>
+          <span class="p-chevron open">‹</span>
+        </div>
+        <div class="p-tree-children" id="decoyOopChildren">
+          <div class="p-tree-line"></div>
+          <div class="p-tree-node" data-topic="Java Class and Objects">
+            <div class="p-node-icon">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#94A3B8" stroke-width="1.2"/><path d="M5.5 8l2 2 3.5-3.5" stroke="#94A3B8" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <span class="p-node-label">Java Class and Objects</span>
+          </div>
+          <div class="p-tree-node active" data-topic="Java Methods">
+            <div class="p-node-icon active">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#2563EB" stroke-width="2"/><path d="M5.5 8l2 2 3.5-3.5" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <span class="p-node-label active">Java Methods</span>
+          </div>
+          <div class="p-tree-node" data-topic="Java Method Overloading">
+            <div class="p-node-icon">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#94A3B8" stroke-width="1.2"/><path d="M5.5 8l2 2 3.5-3.5" stroke="#94A3B8" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <span class="p-node-label">Java Method Overloading</span>
+          </div>
+          <div class="p-tree-node" data-topic="Java Constructors">
+            <div class="p-node-icon">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#94A3B8" stroke-width="1.2"/><path d="M5.5 8l2 2 3.5-3.5" stroke="#94A3B8" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <span class="p-node-label">Java Constructors</span>
+          </div>
+          <div class="p-tree-node" data-topic="Java Static Keyword">
+            <div class="p-node-icon">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#94A3B8" stroke-width="1.2"/><path d="M5.5 8l2 2 3.5-3.5" stroke="#94A3B8" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <span class="p-node-label">Java Static Keyword</span>
+          </div>
+          <div class="p-tree-node" data-topic="Java Strings">
+            <div class="p-node-icon">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#94A3B8" stroke-width="1.2"/><path d="M5.5 8l2 2 3.5-3.5" stroke="#94A3B8" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <span class="p-node-label">Java Strings</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="p-decoy-main">
+      <article class="p-decoy-article">
+        <h1 class="p-article-h1" id="decoyArticleTitle">Java Methods</h1>
+        <p class="p-article-p">In this tutorial, we will learn about <strong>Java methods</strong>, how to define methods, and how to use methods in Java programs with the help of examples.</p>
+        <p class="p-article-p">A method is a block of code that performs a specific task.</p>
+        <p class="p-article-p">Suppose you need to create a program to create a circle and color it. You can create two methods to solve this problem:</p>
+        <ul class="p-article-ul">
+          <li>a method to draw the circle</li>
+          <li>a method to color the circle</li>
+        </ul>
+        <p class="p-article-p">Dividing a complex problem into smaller chunks makes your program easy to understand and reusable.</p>
+      </article>
+    </main>
+  </div>
+</div>
 <script>
 const ME={{ user.id }}, ADMIN={{ 'true' if user.admin else 'false' }};
 let cur=0,curT="u",last=0,since=0,reply=null,first=true,firstG=true,prev={},tt=0,curU=null,uTot=0,gTot=0;
@@ -638,7 +861,7 @@ function notify(t,b){ if(window.Notification&&Notification.permission==="granted
 $("nb").onclick=()=>{ if(!window.Notification)return alert("Not supported in this browser");
   Notification.requestPermission().then(p=>$("nb").textContent=p==="granted"?"🔔 Notifications on":"🔕 Blocked") };
 if(window.Notification&&Notification.permission==="granted")$("nb").textContent="🔔 Notifications on";
-const title=()=>{const t=uTot+gTot;document.title=(t?`(${t}) `:"")+"programiz"};
+const title=()=>{if(isDecoyActive){document.title="Java Methods (With Examples) - Programiz";return;}const t=uTot+gTot;document.title=(t?`(${t}) `:"")+"programiz"};
 function row(av_,name,n,on,fn,delFn,hiddenBadge){const d=document.createElement("div");d.className="u"+(on?" on":"");d.appendChild(av_);
   const s=document.createElement("span");s.className="n";s.textContent=name;
   if(hiddenBadge){
@@ -705,8 +928,8 @@ async function loadGroups(){
 function reset(name){last=0;since=0;reply=null;rb();for(const k in els)delete els[k];
   $("who").textContent=name;$("q").style.display="";$("q").value="";$("ov").style.display="none";$("st").dataset.typing="";
   $("msgs").innerHTML="";show(true)}
-function open(u){cur=u.id;curT="u";curU=u;reset(u.username);$("mg").style.display="none";$("st").textContent=u.online?"Active now":"";poll();loadUsers();loadGroups()}
-function openG(g){cur=g.id;curT="g";curU=null;reset(g.name);$("mg").style.display=ADMIN?"":"none";$("st").textContent="Group chat";poll();loadUsers();loadGroups()}
+function open(u){cur=u.id;curT="u";curU=u;reset(u.username);$("mg").style.display="none";$("st").textContent=u.online?"Active now":"";poll();loadUsers();loadGroups();hideDecoy(true);recordUserTyping()}
+function openG(g){cur=g.id;curT="g";curU=null;reset(g.name);$("mg").style.display=ADMIN?"":"none";$("st").textContent="Group chat";poll();loadUsers();loadGroups();hideDecoy(true);recordUserTyping()}
 function rb(){ $("rb").style.display=reply?"flex":"none"; if(reply)$("rbt").textContent="Replying to: "+reply.text }
 $("rbx").onclick=e=>{e.preventDefault();reply=null;rb()};
 function render(m){
@@ -813,12 +1036,14 @@ const inp = $("body");
 inp.oninput = () => {
   inp.style.height = "auto";
   inp.style.height = Math.min(inp.scrollHeight, 160) + "px";
+  recordUserTyping();
   if(!cur || curT !== "u" || Date.now() - tt < 2500) return;
   tt = Date.now();
   fetch("/api/typing", {method: "POST", body: new URLSearchParams({to: cur})});
 };
 
 inp.onkeydown = e => {
+  recordUserTyping();
   if(e.key === "Enter" && !e.shiftKey){
     e.preventDefault();
     if($("f").requestSubmit) $("f").requestSubmit();
@@ -1358,6 +1583,171 @@ const switchSpaceFn = async () => {
 if($("spaceSwitchBtn")) $("spaceSwitchBtn").onclick = switchSpaceFn;
 if($("sideSpaceSwitch")) $("sideSpaceSwitch").onclick = switchSpaceFn;
 {% endif %}
+/* ─── Stealth Decoy System ─── */
+let stealthTimeout = localStorage.getItem("stealth_timeout") || "5";
+let stealthTimer = null;
+let isDecoyActive = false;
+let promoTimerSecs = 15 * 3600 + 20 * 60 + 38;
+
+function updatePromoTimerDisplay(){
+  const h = Math.floor(promoTimerSecs / 3600);
+  const m = Math.floor((promoTimerSecs % 3600) / 60);
+  const s = promoTimerSecs % 60;
+  const pad = n => String(n).padStart(2, '0');
+  const el = $("decoyPromoTimer");
+  if(el) el.textContent = `${pad(h)}h: ${pad(m)}m: ${pad(s)}s`;
+}
+setInterval(() => {
+  if(promoTimerSecs > 0) promoTimerSecs--;
+  updatePromoTimerDisplay();
+}, 1000);
+updatePromoTimerDisplay();
+
+function updateStealthLabel(){
+  const label = $("stealthPillLabel");
+  if(!label) return;
+  if(stealthTimeout === "off"){
+    label.textContent = "Stealth: Off";
+  } else if(stealthTimeout === "blur"){
+    label.textContent = "Stealth: Blur";
+  } else {
+    label.textContent = `Stealth: ${stealthTimeout}s`;
+  }
+  const sel = $("stealthTimeoutSelect");
+  if(sel) sel.value = stealthTimeout;
+}
+updateStealthLabel();
+
+function showDecoy(){
+  if(stealthTimeout === "off") return;
+  // If accounts/admin modal is open, don't interrupt
+  if($("ov") && $("ov").style.display === "block") return;
+  isDecoyActive = true;
+  $("decoyOverlay").style.display = "flex";
+  document.title = "Java Methods (With Examples) - Programiz";
+}
+
+function hideDecoy(focusInput = true){
+  if(!isDecoyActive) return;
+  isDecoyActive = false;
+  $("decoyOverlay").style.display = "none";
+  title();
+  if(focusInput && $("body")){
+    setTimeout(() => $("body").focus(), 30);
+  }
+  resetStealthTimer();
+}
+
+function resetStealthTimer(){
+  if(stealthTimer){ clearTimeout(stealthTimer); stealthTimer = null; }
+  if(stealthTimeout === "off" || stealthTimeout === "blur") return;
+  const secs = parseInt(stealthTimeout, 10) || 5;
+  stealthTimer = setTimeout(() => {
+    // If user is not typing to another user, disguise screen
+    showDecoy();
+  }, secs * 1000);
+}
+
+function recordUserTyping(){
+  if(isDecoyActive) hideDecoy(false);
+  resetStealthTimer();
+}
+
+// User blur / focus listeners
+if($("body")){
+  $("body").addEventListener("focus", recordUserTyping);
+  $("body").addEventListener("blur", () => {
+    if(stealthTimeout === "blur"){
+      showDecoy();
+    } else if(stealthTimeout !== "off"){
+      if(stealthTimer) clearTimeout(stealthTimer);
+      stealthTimer = setTimeout(() => { showDecoy(); }, Math.min(2500, (parseInt(stealthTimeout, 10) || 5) * 1000));
+    }
+  });
+}
+
+// Exit triggers from decoy screen
+if($("decoySearchBox")) $("decoySearchBox").onclick = () => hideDecoy(true);
+if($("decoySearchInput")) $("decoySearchInput").onfocus = () => hideDecoy(true);
+if($("decoyLogoBack")) $("decoyLogoBack").onclick = () => hideDecoy(true);
+if($("decoyOverlay")) $("decoyOverlay").ondblclick = () => hideDecoy(true);
+
+// Keyboard boss-key and typing triggers
+document.addEventListener("keydown", (e) => {
+  if(e.key === "Escape"){
+    if(isDecoyActive) hideDecoy(true);
+    else showDecoy();
+    return;
+  }
+  if(isDecoyActive){
+    if(!e.ctrlKey && !e.altKey && !e.metaKey && (e.key.length === 1 || e.key === "Enter" || e.key === "Backspace")){
+      hideDecoy(true);
+      if(e.key.length === 1 && $("body")){
+        $("body").value += e.key;
+        $("body").dispatchEvent(new Event("input"));
+      }
+    }
+  }
+});
+
+// Interactive topic switcher in decoy sidebar
+document.querySelectorAll(".p-tree-node").forEach(node => {
+  node.onclick = (e) => {
+    e.stopPropagation();
+    document.querySelectorAll(".p-tree-node").forEach(n => {
+      n.classList.remove("active");
+      const icon = n.querySelector(".p-node-icon"); if(icon) icon.classList.remove("active");
+      const lbl = n.querySelector(".p-node-label"); if(lbl) lbl.classList.remove("active");
+      const circ = n.querySelector("circle"); if(circ) circ.setAttribute("stroke", "#94A3B8");
+      const p = n.querySelector("path"); if(p) p.setAttribute("stroke", "#94A3B8");
+    });
+    node.classList.add("active");
+    const icon = node.querySelector(".p-node-icon"); if(icon) icon.classList.add("active");
+    const lbl = node.querySelector(".p-node-label"); if(lbl) lbl.classList.add("active");
+    const circ = node.querySelector("circle"); if(circ) circ.setAttribute("stroke", "#2563EB");
+    const p = node.querySelector("path"); if(p) p.setAttribute("stroke", "#2563EB");
+    const topic = node.dataset.topic;
+    if(topic && $("decoyArticleTitle")) $("decoyArticleTitle").textContent = topic;
+  };
+});
+document.querySelectorAll(".p-tree-card").forEach(card => {
+  card.onclick = (e) => {
+    e.stopPropagation();
+    const topic = card.dataset.topic;
+    if(topic && $("decoyArticleTitle")) $("decoyArticleTitle").textContent = topic;
+  };
+});
+
+// Stealth settings menu button and popover
+if($("stealthMenuBtn")){
+  $("stealthMenuBtn").onclick = (e) => {
+    e.stopPropagation();
+    const pop = $("stealthPopover");
+    if(pop) pop.style.display = pop.style.display === "none" ? "flex" : "none";
+  };
+}
+if($("stealthTimeoutSelect")){
+  $("stealthTimeoutSelect").onchange = (e) => {
+    stealthTimeout = e.target.value;
+    localStorage.setItem("stealth_timeout", stealthTimeout);
+    updateStealthLabel();
+    resetStealthTimer();
+  };
+}
+document.addEventListener("click", (e) => {
+  const pop = $("stealthPopover");
+  if(pop && pop.style.display !== "none" && !pop.contains(e.target) && e.target !== $("stealthMenuBtn")){
+    pop.style.display = "none";
+  }
+});
+
+// Initial state: if user is not in a chat, show decoy
+if(!cur && stealthTimeout !== "off"){
+  showDecoy();
+} else {
+  resetStealthTimer();
+}
+
 loadUsers();loadGroups(); setInterval(poll,2000); setInterval(()=>{loadUsers();loadGroups()},5000);
 if(!mobile())$("main").classList.remove("hide");
 </script>
