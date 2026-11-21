@@ -1,4 +1,5 @@
 import os, sqlite3, uuid, time, secrets
+import urllib.request, urllib.parse, urllib.error
 from flask import (Flask, g, request, session, redirect, jsonify,
                    send_from_directory, render_template, abort)
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -34,7 +35,10 @@ app.config.update(MAX_CONTENT_LENGTH=16 * 1024 * 1024, SESSION_COOKIE_HTTPONLY=T
 @app.after_request
 def hdr(r):
     r.headers["X-Content-Type-Options"] = "nosniff"
-    r.headers["X-Frame-Options"] = "DENY"
+    if not request.path.startswith("/api/browser_proxy"):
+        r.headers["X-Frame-Options"] = "DENY"
+    else:
+        r.headers["X-Frame-Options"] = "SAMEORIGIN"
     return r
 
 
@@ -673,6 +677,60 @@ def delete_account():
     db().commit()
     session.clear()
     return jsonify(ok=True)
+
+
+@app.route("/api/browser_proxy")
+def browser_proxy():
+    need_login()
+    raw_url = request.args.get("url", "").strip()
+    if not raw_url:
+        return "Missing URL parameter", 400
+    if not (raw_url.startswith("http://") or raw_url.startswith("https://")):
+        if " " in raw_url or ("." not in raw_url and "/" not in raw_url):
+            raw_url = "https://html.duckduckgo.com/html/?q=" + urllib.parse.quote(raw_url)
+        else:
+            raw_url = "https://" + raw_url
+    try:
+        req = urllib.request.Request(
+            raw_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            content_type = resp.headers.get("Content-Type", "text/html")
+            data = resp.read()
+            if "text/html" in content_type:
+                encoding = resp.headers.get_content_charset() or "utf-8"
+                html = data.decode(encoding, errors="replace")
+                base_tag = f'<base href="{raw_url}" target="_self">'
+                if "<head>" in html:
+                    html = html.replace("<head>", f"<head>{base_tag}", 1)
+                elif "<HEAD>" in html:
+                    html = html.replace("<HEAD>", f"<HEAD>{base_tag}", 1)
+                else:
+                    html = base_tag + html
+                response = app.response_class(html, mimetype="text/html")
+                response.headers["X-Frame-Options"] = "SAMEORIGIN"
+                return response
+            response = app.response_class(data, mimetype=content_type)
+            return response
+    except Exception as e:
+        err_page = f"""<!DOCTYPE html>
+<html><head><title>Unable to load</title>
+<style>body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:40px;color:#333;line-height:1.6;background:#f8fafc}}
+.b{{max-width:560px;margin:30px auto;background:#fff;padding:28px;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.06)}}
+h2{{color:#e11d48;margin-top:0;font-size:20px}}code{{background:#f1f5f9;padding:3px 6px;border-radius:4px;word-break:break-all;font-size:13px}}</style></head>
+<body><div class="b"><h2>⚠️ Unable to connect to page</h2>
+<p>Could not open: <code>{raw_url}</code></p>
+<p style="color:#64748b;font-size:13px">Reason: {str(e)}</p>
+<p style="margin-top:20px"><a href="javascript:history.back()" style="color:#2563eb;font-weight:600;text-decoration:none">← Go Back</a></p>
+</div></body></html>"""
+        response = app.response_class(err_page, mimetype="text/html")
+        return response
+
 
 
 @app.route("/api/groups")
